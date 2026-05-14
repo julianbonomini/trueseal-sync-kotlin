@@ -1,0 +1,110 @@
+name: Release AAR
+
+# Triggered by a version tag, e.g.: git tag v0.1.0 && git push origin v0.1.0
+on:
+  push:
+    tags:
+      - 'v[0-9]*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+      # ── Checkouts ─────────────────────────────────────────────────────────
+      # Repos must be siblings so the Cargo path deps (../hush-noise/rust)
+      # and the build script (../hush-sync) resolve correctly.
+
+      - name: Checkout hush-sync-kotlin
+        uses: actions/checkout@v4
+        with:
+          path: hush-sync-kotlin
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Checkout hush-sync
+        uses: actions/checkout@v4
+        with:
+          repository: buenomini/hush-sync
+          path: hush-sync
+
+      - name: Checkout hush-noise
+        uses: actions/checkout@v4
+        with:
+          repository: buenomini/hush-noise
+          path: hush-noise
+
+      # ── Java / Android SDK ────────────────────────────────────────────────
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Android NDK
+        run: |
+          sdkmanager "ndk;26.3.11579264"
+          echo "ANDROID_NDK_HOME=$ANDROID_SDK_ROOT/ndk/26.3.11579264" >> "$GITHUB_ENV"
+
+      # ── Rust toolchain ────────────────────────────────────────────────────
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-linux-android,x86_64-linux-android,aarch64-unknown-linux-gnu
+
+      - name: Install cargo-ndk
+        run: cargo install cargo-ndk --locked
+
+      - name: Cache Rust build artefacts
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: hush-sync -> target
+
+      # ── Build .so + generate Kotlin bindings ──────────────────────────────
+
+      - name: Build Android .so + generate bindings
+        working-directory: hush-sync-kotlin
+        env:
+          CARGO_TARGET_DIR: /tmp/hush-sync-android-build
+        run: bash scripts/build-android.sh
+
+      # ── Assemble AAR ──────────────────────────────────────────────────────
+
+      - name: Set version from tag
+        run: echo "VERSION_NAME=${GITHUB_REF_NAME#v}" >> "$GITHUB_ENV"
+
+      - name: Assemble release AAR
+        working-directory: hush-sync-kotlin
+        run: ./gradlew lib:assembleRelease -PVERSION_NAME="$VERSION_NAME"
+
+      # ── Commit generated artefacts to main ────────────────────────────────
+      # Commits .so files + generated bindings so JitPack and local devs
+      # can build without re-running the build script.
+
+      - name: Commit generated artefacts to main
+        working-directory: hush-sync-kotlin
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add lib/src/main/jniLibs/ lib/src/main/java/
+          git diff --cached --quiet \
+            || git commit -m "chore: update native libs + UniFFI bindings for ${TAG} [skip ci]"
+          git push origin HEAD:main
+
+      # ── GitHub Release ────────────────────────────────────────────────────
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: hush-sync-kotlin/lib/build/outputs/aar/lib-release.aar
+          generate_release_notes: true
+          fail_on_unmatched_files: true
