@@ -1,23 +1,14 @@
-# HushSync Android SDK
+# hush-sync-kotlin
 
-Idiomatic Kotlin wrapper for the [hush-sync](../hush-sync) Rust library.
+Android SDK for [hush-sync](https://github.com/buenomini/hush-sync) — E2EE, local-first sync between devices. Device identity, pairing, encrypted delivery, and outbox replay. No accounts. No server-side keys.
 
-E2EE, local-first sync between devices. No FFI, no Noise Protocol, no raw keys.
+[![JitPack](https://jitpack.io/v/buenomini/hush-sync-kotlin.svg)](https://jitpack.io/#buenomini/hush-sync-kotlin)
 
----
-
-## Requirements
-
-- Android API 24+ (Android 7.0)
-- Kotlin 1.9+ / Coroutines
+For architecture, protocol semantics, and integration patterns see the **[hush-sync integration guide](https://github.com/buenomini/hush-sync/blob/main/docs/integrating-hush-sync.md)**.
 
 ---
 
-## Add to your project
-
-### Gradle (via JitPack)
-
-1. Add JitPack to your settings:
+## Install
 
 ```kotlin
 // settings.gradle.kts
@@ -30,216 +21,235 @@ dependencyResolutionManagement {
 }
 ```
 
-2. Add the dependency:
-
 ```kotlin
 // app/build.gradle.kts
 dependencies {
-    implementation("com.github.buenomini:hush-sync-kotlin:0.1.0")
+    implementation("com.github.buenomini:hush-sync-kotlin:<version>")
 }
 ```
 
-No Rust toolchain required — pre-built `.so` files are committed to this repo
-and JitPack assembles the AAR directly.
+No Rust toolchain needed — pre-built `.so` files (`arm64-v8a`, `x86_64`) are bundled in the AAR.
+
+**Requirements:** API 24+ · Kotlin 1.9+ · Coroutines
 
 ---
 
-## Contributing / local development
-
-Requires a Rust toolchain, Android NDK, and the sibling repos checked out:
-
-```
-hush/
-  hush-noise/
-  hush-sync/
-  hush-sync-kotlin/   ← this repo
-```
-
-```bash
-# Install Rust Android targets + cargo-ndk (one-time)
-rustup target add aarch64-linux-android x86_64-linux-android
-cargo install cargo-ndk
-
-# Build .so files + regenerate Kotlin bindings
-bash scripts/build-android.sh
-```
-
-Commit the generated files (`lib/src/main/jniLibs/` and `lib/src/main/java/uniffi/`)
-after running the script — JitPack builds from these committed artefacts.
-
-### Regenerating bindings when the Rust core changes
-
-Run `build-android.sh` whenever `hush-sync/src/ffi.rs` changes:
-
-```bash
-bash scripts/build-android.sh
-git add lib/src/main/jniLibs/ lib/src/main/java/uniffi/
-git commit -m "chore: update native libs + UniFFI bindings"
-```
-
-The script:
-1. Cross-compiles `hush-sync` for `arm64-v8a` and `x86_64` Android ABIs via `cargo-ndk`
-2. Copies `.so` files to `lib/src/main/jniLibs/{abi}/`
-3. Generates Kotlin bindings via `uniffi-bindgen` (using the host dylib for metadata)
-4. Copies generated `hush_sync.kt` / `hush_noise.kt` to `lib/src/main/java/uniffi/`
-
-### Releasing
-
-```bash
-git tag v0.1.0
-git push origin v0.1.0
-```
-
-The [release workflow](.github/workflows/release.yml) builds the `.so` files,
-regenerates bindings, assembles the AAR, commits the artefacts to `main`, and
-creates a GitHub Release with the AAR attached.
-
----
-
-## Usage
-
-### 1. Initialise
+## Initialise
 
 ```kotlin
-import dev.hush.sync.HushSyncClient
-import android.util.Base64
-
 val client = HushSyncClient(
     context        = applicationContext,
-    relayHost      = "relay.example.com",
-    relayPublicKey = Base64.decode("<32-byte relay pub key, base64>", Base64.DEFAULT),
+    relayHost      = "relay.example.com",               // your hush-relay host
+    relayPublicKey = hexToBytes("..."),                  // relay's 32-byte X25519 pubkey
+    namespace      = "myapp",                            // scope to your app; see note below
 )
-// storageDirectory and namespace have sensible defaults.
-// The client is immediately usable — relay connects in the background.
 ```
 
-`HushSyncClient` implements `Closeable`. Call `close()` in `onDestroy` or use the
-`use { }` block to release native resources and complete all Flows:
+`relayHost` and `relayPublicKey` are build-time constants — not user-configurable.
+See [how to get the relay public key](https://github.com/buenomini/hush-sync/blob/main/docs/integrating-hush-sync.md#relay-public-key).
+
+**`namespace`:** always pass an explicit value scoped to your app (`"com.example.myapp"`).
+The default is `"default"` — fine for a single app, wrong if multiple apps share the device.
+
+**Init failure is fatal.** A thrown `HushSyncError` at construction means bad arguments or corrupt storage. Do not catch and retry — surface it as a crash or show an unrecoverable error screen.
+
+---
+
+## Startup
+
+Seed local state from the persisted snapshot *before* collecting flows — this prevents a momentary empty member list on cold start:
 
 ```kotlin
+// In your ViewModel or Application class:
+
+// 1. Snapshot existing group members from persisted state
+val initialMembers = client.members          // excludes local device; empty until first pair
+val localId        = client.localNodeId
+val localName      = client.localDeviceName
+
+// 2. Then attach Flow collectors
+client.memberEvents
+    .onEach { event -> /* update your state */ }
+    .launchIn(viewModelScope)
+
+client.blobs
+    .onEach { blob -> handleIncoming(blob) }
+    .launchIn(viewModelScope)
+
+client.connectionState
+    .onEach { state -> updateRelayIndicator(state) }
+    .launchIn(viewModelScope)
+```
+
+Flows complete when `destroyGroup()` is called or `close()` is invoked.
+
+---
+
+## Pairing
+
+Pairing is a two-device ceremony. One device generates a token (QR code, share sheet, etc.); the other scans it.
+
+```kotlin
+// ── Device A (host) ───────────────────────────────────────────────────────────
+
+// Generate a token — stable for the keypair lifetime, safe to show in a QR.
+val token = clientA.generatePairingToken()
+
+// Accept incoming requests (do this before sharing the token)
+clientA.pairingRequests
+    .onEach { request ->
+        // Show request.deviceName to the user, then:
+        clientA.acceptPairingRequest(request)
+        clientA.cancelPairing()             // single-use: close window after accepting
+    }
+    .launchIn(viewModelScope)
+
+
+// ── Device B (joiner) ─────────────────────────────────────────────────────────
+
+clientB.joinGroup(token)                    // throws HushSyncError.InvalidPairingToken if bad
+```
+
+After `acceptPairingRequest`, both devices receive `MemberEvent.Joined` with the new member's ID and name.
+
+Call `cancelPairing()` when the pairing UI closes, even if no request arrived. It is idempotent.
+
+---
+
+## Publish / receive
+
+```kotlin
+// Send to all group members — queues to outbox if relay is offline.
+client.publish("hello".toByteArray())
+client.publish("hello")                     // UTF-8 convenience overload
+
+// Receive
+client.blobs
+    .onEach { blob ->
+        val text = blob.text                // null if payload is not valid UTF-8
+        val from = blob.senderPublicKey     // sender's 32-byte X25519 pubkey (stable ID)
+    }
+    .launchIn(viewModelScope)
+```
+
+**The relay may echo your own messages back.** Deduplicate at the app layer — check content against local storage, don't rely on sender filtering.
+
+---
+
+## Membership
+
+```kotlin
+// Snapshot — excludes the local device.
+val members: List<SyncMember> = client.members   // each access is an FFI call; cache if needed
+
+// Remove a member (soft removal — no key rotation).
+// The removed device fires MemberEvent.RemovedSelf.
+client.removeMember(members.first { it.name == "AmberFalcon" })
+
+// Observe changes
+client.memberEvents.onEach { event ->
+    when (event) {
+        is MemberEvent.Joined        -> { /* event.member: SyncMember */ }
+        is MemberEvent.Left          -> { /* event.member: SyncMember */ }
+        is MemberEvent.RemovedSelf   -> { /* this device was kicked; re-init */ }
+        is MemberEvent.GroupDestroyed -> { /* full wipe; re-init */ }
+    }
+}.launchIn(viewModelScope)
+```
+
+Re-snapshot from `client.members` on every event rather than patching a local list — this avoids missing events from race conditions.
+
+---
+
+## Destroy group
+
+Destroy is a **security primitive** (compromised device, fresh start), not a routine "leave":
+
+```kotlin
+client.destroyGroup()
+// Sends Revoke to all members. Every device receives MemberEvent.GroupDestroyed.
+// All Flows complete. Call close() and reinitialise with a new HushSyncClient.
+```
+
+There is no "leave quietly" protocol — see the [integration guide §9](https://github.com/buenomini/hush-sync/blob/main/docs/integrating-hush-sync.md#9-group-exit) for the workaround.
+
+---
+
+## Error handling
+
+All errors are `HushSyncError` — a sealed class extending `Exception`:
+
+| Variant | When |
+|---|---|
+| `InvalidRelayPublicKey` | Key is not exactly 32 bytes |
+| `InvalidNamespace` | Namespace contains illegal characters |
+| `InvalidPairingToken` | Token is malformed |
+| `NotInGroup` | Operation requires a paired group |
+| `MemberNotFound` | `removeMember` target is not in the manifest |
+| `PushFailed` | Relay push failed — blob is queued in outbox, **do not retry** |
+| `GroupDestroyed` | Session is terminal — reinitialise |
+
+```kotlin
+try {
+    client.publish(payload)
+} catch (e: HushSyncError.PushFailed) {
+    // Blob is already in the outbox. No action needed.
+} catch (e: HushSyncError.NotInGroup) {
+    // Guide user through pairing first.
+} catch (e: HushSyncError) {
+    Log.e("HushSync", e.message)
+}
+```
+
+---
+
+## Lifecycle
+
+`HushSyncClient` implements `Closeable`. Close it to stop background tasks and complete all Flows.
+
+```kotlin
+// Activity / Fragment
 override fun onDestroy() {
     super.onDestroy()
     client.close()
 }
 ```
 
-### 2. Pair two devices
-
-**Device A** — generates a pairing token (show as QR code, share sheet, etc.):
-
 ```kotlin
-val token = clientA.generatePairingToken()
-// display `token` to the user
-```
-
-**Device B** — scans the token and requests to join:
-
-```kotlin
-clientB.joinGroup(token)
-```
-
-**Device A** — accepts the request:
-
-```kotlin
-clientA.pairingRequests
-    .take(1)
-    .onEach { request ->
-        println("Pairing request from: ${request.deviceName}")
-        clientA.acceptPairingRequest(request)
-    }
-    .launchIn(lifecycleScope)
-```
-
-### 3. Publish a payload
-
-```kotlin
-// Raw bytes:
-client.publish("Hello from Android".toByteArray())
-
-// Or the string convenience overload:
-client.publish("Hello from Android")
-```
-
-### 4. Receive blobs
-
-```kotlin
-client.blobs
-    .onEach { blob ->
-        println(blob.text ?: "<binary, ${blob.data.size} bytes>")
-    }
-    .launchIn(lifecycleScope)
-```
-
-### 5. List & remove members
-
-```kotlin
-val members = client.members
-println(members.map { it.name })  // ["AmberFalcon", "CrimsonOwl"]
-
-client.removeMember(members[0])   // Soft Removal — no key rotation
-```
-
-### 6. Handle membership events
-
-```kotlin
-client.memberEvents
-    .onEach { event ->
-        when (event) {
-            is MemberEvent.Joined        -> println("${event.member.name} joined")
-            is MemberEvent.Left          -> println("${event.member.name} left")
-            is MemberEvent.RemovedSelf   -> println("This device was removed from the group")
-            is MemberEvent.GroupDestroyed -> println("Group destroyed — reinitialise to start fresh")
-        }
-    }
-    .launchIn(lifecycleScope)
-```
-
-### 7. Destroy group (security incident)
-
-```kotlin
-client.destroyGroup()
-// Every member receives MemberEvent.GroupDestroyed.
-// All Flows complete automatically.
-// Call client.close() to release native resources, then
-// construct a new HushSyncClient with the same namespace.
-```
-
----
-
-## Error handling
-
-All errors are `HushSyncError` — a sealed class extending `Exception`.
-
-```kotlin
-try {
+// Scoped usage
+HushSyncClient(context, relayHost, relayPublicKey).use { client ->
     client.publish("hello")
-} catch (e: HushSyncError.NotInGroup) {
-    // Pairing not yet complete
-} catch (e: HushSyncError.GroupDestroyed) {
-    // Reinitialise the client
-} catch (e: HushSyncError) {
-    println(e.message)
 }
 ```
 
+`close()` is safe to call after `destroyGroup()`.
+
 ---
 
-## Architecture
+## Build from source
+
+Requires a Rust toolchain, Android NDK, and sibling repos at the same level:
 
 ```
-Your App
-   │  import dev.hush.sync
-   ▼
-HushSyncClient          ← idiomatic Kotlin (this SDK)
-   │  (internal)
-   ▼
-uniffi.hush_sync        ← UniFFI-generated Kotlin (never public)
-   │
-   ▼
-libhush_sync.so         ← compiled Rust (hush-sync + hush-noise)
+hush/
+  hush-noise/
+  hush-sync/
+  hush-sync-kotlin/
 ```
 
-No UniFFI types, raw bytes, or Noise Protocol concepts cross the public boundary.
+```bash
+rustup target add aarch64-linux-android x86_64-linux-android
+cargo install cargo-ndk
+bash scripts/build-android.sh
+```
+
+Commit `lib/src/main/jniLibs/` and `lib/src/main/java/uniffi/` after running — JitPack builds from committed artefacts.
+
+**Release:** tag and push. The [release workflow](.github/workflows/release.yml) rebuilds native libs, assembles the AAR, and publishes to GitHub Releases.
+
+```bash
+git tag v0.1.1 && git push origin v0.1.1
+```
 
 ---
 
