@@ -92,8 +92,7 @@ for entry in "${TARGETS[@]}"; do
         cd "$RUST_DIR"
         cargo ndk \
             --target "$RUST_TARGET" \
-            $([ "$PROFILE" = "release" ] && echo "--release") \
-            -- build 2>&1 | tail -5
+            -- build $([ "$PROFILE" = "release" ] && echo "--release") 2>&1 | tail -5
     )
 
     LIB_PATH="$CARGO_TARGET_DIR/$RUST_TARGET/$PROFILE/lib${CRATE_NAME}.so"

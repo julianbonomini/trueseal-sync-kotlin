@@ -19,8 +19,8 @@ import java.io.File
  *
  * ```kotlin
  * val client = HushSyncClient(
- *     context       = applicationContext,
- *     relayHost     = "relay.example.com",
+ *     context        = applicationContext,
+ *     relayHost      = "relay.example.com",
  *     relayPublicKey = Base64.decode("<32-byte relay key, base64>", Base64.DEFAULT),
  * )
  * ```
@@ -28,6 +28,10 @@ import java.io.File
  * Construction is **infallible with respect to relay connectivity** — the client
  * connects in the background and queues any outbox messages until the relay is reached.
  * The only throwing conditions are invalid arguments (key length, namespace).
+ *
+ * Call [close] when the client is no longer needed (e.g. `onDestroy`). This destroys
+ * the underlying Rust session, closes all Flow channels, and frees native resources.
+ * Prefer `use { }` for scoped lifetimes.
  *
  * ## Pairing
  *
@@ -51,7 +55,14 @@ class HushSyncClient(
     relayPublicKey: ByteArray,
     storageDirectory: File = context.filesDir.resolve("HushSync"),
     namespace: String = "default",
-) {
+) : java.io.Closeable {
+
+    // ── Private channels (class-level so close() can reach them) ─────────────
+
+    private val blobChannel       = Channel<ReceivedBlob>(Channel.UNLIMITED)
+    private val memberChannel     = Channel<MemberEvent>(Channel.UNLIMITED)
+    private val pairingChannel    = Channel<PairingRequest>(Channel.UNLIMITED)
+    private val connectionChannel = Channel<ConnectionState>(Channel.UNLIMITED)
 
     // ── Private state ─────────────────────────────────────────────────────────
 
@@ -63,17 +74,17 @@ class HushSyncClient(
      * Incoming blobs pushed to this device by other Sync Group members.
      *
      * Collect with `client.blobs.collect { … }` or `launchIn(scope)`.
-     * The flow completes only after [destroyGroup] is called (local or remote).
+     * The flow completes after [destroyGroup] is called (local or remote) or after [close].
      */
-    val blobs: Flow<ReceivedBlob>
+    val blobs: Flow<ReceivedBlob>           = blobChannel.receiveAsFlow()
 
     /**
      * Sync Group membership lifecycle events.
      *
      * Delivers [MemberEvent] values as they arrive.
-     * Completes when the group is destroyed.
+     * Completes when the group is destroyed or [close] is called.
      */
-    val memberEvents: Flow<MemberEvent>
+    val memberEvents: Flow<MemberEvent>     = memberChannel.receiveAsFlow()
 
     /**
      * Incoming pairing requests from devices that scanned this device's token.
@@ -81,7 +92,7 @@ class HushSyncClient(
      * Collect and call [acceptPairingRequest] to admit each device.
      * Call [cancelPairing] to close the window without admitting anyone.
      */
-    val pairingRequests: Flow<PairingRequest>
+    val pairingRequests: Flow<PairingRequest> = pairingChannel.receiveAsFlow()
 
     /**
      * Informational relay connection state changes.
@@ -89,41 +100,51 @@ class HushSyncClient(
      * The library reconnects automatically — use for UI indicators only.
      * Never gate on this before calling [publish].
      */
-    val connectionState: Flow<ConnectionState>
+    val connectionState: Flow<ConnectionState> = connectionChannel.receiveAsFlow()
 
     // ── Init ──────────────────────────────────────────────────────────────────
 
     init {
         storageDirectory.mkdirs()
 
-        val blobChannel       = Channel<ReceivedBlob>(Channel.UNLIMITED)
-        val memberChannel     = Channel<MemberEvent>(Channel.UNLIMITED)
-        val pairingChannel    = Channel<PairingRequest>(Channel.UNLIMITED)
-        val connectionChannel = Channel<ConnectionState>(Channel.UNLIMITED)
-
-        blobs           = blobChannel.receiveAsFlow()
-        memberEvents    = memberChannel.receiveAsFlow()
-        pairingRequests = pairingChannel.receiveAsFlow()
-        connectionState = connectionChannel.receiveAsFlow()
+        // Build ALL callback handlers before calling create().
+        //
+        // The Rust session starts its tokio runtime during create() and may fire
+        // member events (e.g. from outbox replay on reconnect) on a background thread
+        // before control returns to Kotlin. Pre-creating handlers ensures every event
+        // is captured in the buffered channels from the first possible moment.
+        //
+        // Note: setOnMemberRequest / setOnMemberJoined / setOnMemberLeft are separate
+        // FFI setters (not constructor args) — there is a theoretical window between
+        // create() returning and those setters being called. In practice this window
+        // is sub-millisecond and all three events require multi-hop network activity
+        // to trigger, but be aware of it for reconnect-replay scenarios.
+        val blobHandler       = BlobCallbackHandler(blobChannel)
+        val removedHandler    = MemberRemovedCallbackHandler(memberChannel)
+        val destroyedHandler  = GroupDestroyedCallbackHandler(memberChannel, blobChannel, pairingChannel, connectionChannel)
+        val connHandler       = ConnectionChangedCallbackHandler(connectionChannel)
+        val pairingHandler    = PairingRequestCallbackHandler(pairingChannel)
+        val joinedHandler     = MemberJoinedCallbackHandler(memberChannel)
+        val leftHandler       = MemberLeftCallbackHandler(memberChannel)
 
         try {
             session = HushFfiSession.`create`(
-                baseDir              = storageDirectory.absolutePath,
-                namespace            = namespace,
-                relayHost            = relayHost,
-                relayPub             = relayPublicKey,
-                onMessage            = BlobCallbackHandler(blobChannel),
-                onRemovedFromGroup   = MemberRemovedCallbackHandler(memberChannel),
-                onGroupDestroyed     = GroupDestroyedCallbackHandler(memberChannel),
-                onConnectionChanged  = ConnectionChangedCallbackHandler(connectionChannel),
+                baseDir             = storageDirectory.absolutePath,
+                namespace           = namespace,
+                relayHost           = relayHost,
+                relayPub            = relayPublicKey,
+                onMessage           = blobHandler,
+                onRemovedFromGroup  = removedHandler,
+                onGroupDestroyed    = destroyedHandler,
+                onConnectionChanged = connHandler,
             )
         } catch (e: SessionException) {
             throw HushSyncError.from(e)
         }
 
-        session.`setOnMemberRequest`(PairingRequestCallbackHandler(pairingChannel))
-        session.`setOnMemberJoined`(MemberJoinedCallbackHandler(memberChannel))
-        session.`setOnMemberLeft`(MemberLeftCallbackHandler(memberChannel))
+        session.`setOnMemberRequest`(pairingHandler)
+        session.`setOnMemberJoined`(joinedHandler)
+        session.`setOnMemberLeft`(leftHandler)
     }
 
     // ── Pairing ───────────────────────────────────────────────────────────────
@@ -167,13 +188,23 @@ class HushSyncClient(
      * @param request The request received from [pairingRequests].
      */
     fun acceptPairingRequest(request: PairingRequest) {
-        session.`acceptMember`(request.token)
+        try {
+            session.`acceptMember`(request.token)
+        } catch (e: SessionException) {
+            throw HushSyncError.from(e)
+        }
     }
 
     /**
      * Close the pairing window without admitting any device.
      */
-    fun cancelPairing() = session.`cancelPairing`()
+    fun cancelPairing() {
+        try {
+            session.`cancelPairing`()
+        } catch (e: SessionException) {
+            throw HushSyncError.from(e)
+        }
+    }
 
     // ── Publishing ────────────────────────────────────────────────────────────
 
@@ -211,6 +242,8 @@ class HushSyncClient(
      * Stable opaque identifier for the local device.
      *
      * Identical to the `id` this device has in a remote peer's [members] list.
+     *
+     * **Note:** each access makes an FFI call. Cache if read frequently.
      */
     val localNodeId: String get() = session.`localNodeId`()
 
@@ -218,6 +251,8 @@ class HushSyncClient(
      * Auto-generated display name for the local device.
      *
      * Identical to the `name` this device has in a remote peer's [members] list.
+     *
+     * **Note:** each access makes an FFI call. Cache if read frequently.
      */
     val localDeviceName: String get() = session.`localDeviceName`()
 
@@ -225,6 +260,9 @@ class HushSyncClient(
      * Current remote Sync Group members (excludes the local device).
      *
      * Empty until the first pairing completes.
+     *
+     * **Note:** each access makes an FFI call and returns a new snapshot list.
+     * Cache the result if you need a stable reference for the same operation.
      */
     val members: List<SyncMember>
         get() = session.`members`().map { SyncMember(id = it.id, name = it.name) }
@@ -261,7 +299,39 @@ class HushSyncClient(
      * removal, prefer [removeMember].
      *
      * After calling this, create a new [HushSyncClient] with the same namespace to
-     * start fresh with a new identity.
+     * start fresh with a new identity. Note: you should also call [close] on this
+     * instance to release native resources.
      */
-    fun destroyGroup() = session.`destroyGroup`()
+    fun destroyGroup() {
+        try {
+            session.`destroyGroup`()
+        } catch (e: SessionException) {
+            throw HushSyncError.from(e)
+        }
+    }
+
+    // ── Closeable ─────────────────────────────────────────────────────────────
+
+    /**
+     * Release all resources held by this client.
+     *
+     * Closes the underlying Rust session (stops background tasks, flushes the outbox)
+     * and completes all public [Flow]s. Safe to call multiple times.
+     *
+     * Call from `onDestroy` or use the `use { }` block:
+     * ```kotlin
+     * HushSyncClient(...).use { client ->
+     *     client.publish("hello")
+     * }
+     * ```
+     */
+    override fun close() {
+        // Close channels first so any in-flight callbacks trySend() silently.
+        blobChannel.close()
+        memberChannel.close()
+        pairingChannel.close()
+        connectionChannel.close()
+        // Destroy the native session — stops background threads and flushes outbox.
+        session.destroy()
+    }
 }

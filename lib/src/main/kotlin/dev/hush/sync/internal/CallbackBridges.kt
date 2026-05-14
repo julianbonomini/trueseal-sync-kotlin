@@ -33,11 +33,18 @@ internal class MemberRemovedCallbackHandler(
 // ── Group destroyed ───────────────────────────────────────────────────────────
 
 internal class GroupDestroyedCallbackHandler(
-    private val memberChannel: SendChannel<MemberEvent>,
+    private val memberChannel:     SendChannel<MemberEvent>,
+    private val blobChannel:       SendChannel<ReceivedBlob>,
+    private val pairingChannel:    SendChannel<PairingRequest>,
+    private val connectionChannel: SendChannel<ConnectionState>,
 ) : GroupDestroyedCallback {
     override fun `onGroupDestroyed`() {
         memberChannel.trySend(MemberEvent.GroupDestroyed)
+        // Close all channels so every Flow collector reaches onCompletion.
         memberChannel.close()
+        blobChannel.close()
+        pairingChannel.close()
+        connectionChannel.close()
     }
 }
 

@@ -113,6 +113,16 @@ val client = HushSyncClient(
 // The client is immediately usable — relay connects in the background.
 ```
 
+`HushSyncClient` implements `Closeable`. Call `close()` in `onDestroy` or use the
+`use { }` block to release native resources and complete all Flows:
+
+```kotlin
+override fun onDestroy() {
+    super.onDestroy()
+    client.close()
+}
+```
+
 ### 2. Pair two devices
 
 **Device A** — generates a pairing token (show as QR code, share sheet, etc.):
@@ -189,7 +199,9 @@ client.memberEvents
 ```kotlin
 client.destroyGroup()
 // Every member receives MemberEvent.GroupDestroyed.
-// All devices rotate keypairs automatically on next init.
+// All Flows complete automatically.
+// Call client.close() to release native resources, then
+// construct a new HushSyncClient with the same namespace.
 ```
 
 ---

@@ -2,4 +2,4 @@ jdk: 17
 before_install:
   - sdk install java 17.0.9-tem || true
 install:
-  - ./gradlew lib:assembleRelease
+  - ./gradlew lib:assembleRelease -PVERSION_NAME=${JITPACK_VERSION:-0.1.0}

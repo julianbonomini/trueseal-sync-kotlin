@@ -9,11 +9,13 @@ android {
     compileSdk  = 34
 
     defaultConfig {
-        minSdk = 24
+        minSdk    = 24
+        targetSdk = 34
         // Only ship the ABIs we cross-compile in build-android.sh
         ndk {
             abiFilters += listOf("arm64-v8a", "x86_64")
         }
+        consumerProguardFiles("consumer-rules.pro")
     }
 
     compileOptions {
