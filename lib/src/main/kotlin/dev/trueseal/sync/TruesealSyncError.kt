@@ -1,43 +1,43 @@
-package dev.hush.sync
+package dev.trueseal.sync
 
-import uniffi.hush_sync.SessionException
+import uniffi.trueseal_sync.SessionException
 
 /**
- * All errors surfaced by [HushSyncClient].
+ * All errors surfaced by [TruesealSyncClient].
  *
  * Maps one-to-one with the Rust `SessionError` variants; no FFI types leak through.
  */
-sealed class HushSyncError : Exception() {
+sealed class TruesealSyncError : Exception() {
 
     /** Relay URL missing a host component. */
-    object InvalidRelayUrl : HushSyncError()
+    object InvalidRelayUrl : TruesealSyncError()
 
     /** The relay public key was not exactly 32 bytes. */
-    object InvalidRelayPublicKey : HushSyncError()
+    object InvalidRelayPublicKey : TruesealSyncError()
 
     /** The namespace string contains illegal characters or is empty. Valid pattern: `[a-zA-Z0-9_-]+` */
-    data class InvalidNamespace(val reason: String) : HushSyncError()
+    data class InvalidNamespace(val reason: String) : TruesealSyncError()
 
     /**
      * Push (blob fan-out) failed. The blob was durably queued in the outbox
      * and will be retried on reconnect — this error is informational.
      */
-    data class PushFailed(val reason: String) : HushSyncError()
+    data class PushFailed(val reason: String) : TruesealSyncError()
 
     /** The pairing token was malformed or expired. */
-    object InvalidPairingToken : HushSyncError()
+    object InvalidPairingToken : TruesealSyncError()
 
     /** An operation that requires group membership was attempted before pairing. */
-    object NotInGroup : HushSyncError()
+    object NotInGroup : TruesealSyncError()
 
     /** The target member ID was not found in the current Group Manifest. */
-    object MemberNotFound : HushSyncError()
+    object MemberNotFound : TruesealSyncError()
 
     /**
-     * The group has been destroyed. Reconstruct [HushSyncClient] with the same
+     * The group has been destroyed. Reconstruct [TruesealSyncClient] with the same
      * namespace to start fresh with a new identity.
      */
-    object GroupDestroyed : HushSyncError()
+    object GroupDestroyed : TruesealSyncError()
 
     override val message: String
         get() = when (this) {
@@ -52,8 +52,8 @@ sealed class HushSyncError : Exception() {
         }
 
     companion object {
-        /** Map a UniFFI [SessionException] to a [HushSyncError]. Internal use only. */
-        internal fun from(e: SessionException): HushSyncError = when (e) {
+        /** Map a UniFFI [SessionException] to a [TruesealSyncError]. Internal use only. */
+        internal fun from(e: SessionException): TruesealSyncError = when (e) {
             is SessionException.InvalidKeyLength      -> InvalidRelayPublicKey
             is SessionException.InvalidRelayPublicKey -> InvalidRelayPublicKey
             is SessionException.InvalidNamespace      -> InvalidNamespace(e.`msg`)

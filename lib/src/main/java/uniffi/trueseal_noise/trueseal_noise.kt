@@ -3,7 +3,7 @@
 
 @file:Suppress("NAME_SHADOWING")
 
-package uniffi.hush_noise
+package uniffi.trueseal_noise
 
 // Common helper code.
 //
@@ -59,7 +59,7 @@ open class RustBuffer : Structure() {
     companion object {
         internal fun alloc(size: ULong = 0UL) = uniffiRustCall() { status ->
             // Note: need to convert the size to a `Long` value to make this work with JVM.
-            UniffiLib.INSTANCE.ffi_hush_noise_rustbuffer_alloc(size.toLong(), status)
+            UniffiLib.INSTANCE.ffi_trueseal_noise_rustbuffer_alloc(size.toLong(), status)
         }.also {
             if(it.data == null) {
                throw RuntimeException("RustBuffer.alloc() returned null data pointer (size=${size})")
@@ -75,7 +75,7 @@ open class RustBuffer : Structure() {
         }
 
         internal fun free(buf: RustBuffer.ByValue) = uniffiRustCall() { status ->
-            UniffiLib.INSTANCE.ffi_hush_noise_rustbuffer_free(buf, status)
+            UniffiLib.INSTANCE.ffi_trueseal_noise_rustbuffer_free(buf, status)
         }
     }
 
@@ -375,7 +375,7 @@ private fun findLibraryName(componentName: String): String {
     if (libOverride != null) {
         return libOverride
     }
-    return "hush_sync"
+    return "trueseal_sync"
 }
 
 private inline fun <reified Lib : Library> loadIndirect(
@@ -780,7 +780,7 @@ internal open class UniffiVTableCallbackInterfaceNoiseTransport(
 internal interface UniffiLib : Library {
     companion object {
         internal val INSTANCE: UniffiLib by lazy {
-            loadIndirect<UniffiLib>(componentName = "hush_noise")
+            loadIndirect<UniffiLib>(componentName = "trueseal_noise")
             .also { lib: UniffiLib ->
                 uniffiCheckContractApiVersion(lib)
                 uniffiCheckApiChecksums(lib)
@@ -794,193 +794,193 @@ internal interface UniffiLib : Library {
         }
     }
 
-    fun uniffi_hush_noise_fn_clone_noisetransport(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_trueseal_noise_fn_clone_noisetransport(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus, 
     ): Pointer
-    fun uniffi_hush_noise_fn_free_noisetransport(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_trueseal_noise_fn_free_noisetransport(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
-    fun uniffi_hush_noise_fn_init_callback_vtable_noisetransport(`vtable`: UniffiVTableCallbackInterfaceNoiseTransport,
+    fun uniffi_trueseal_noise_fn_init_callback_vtable_noisetransport(`vtable`: UniffiVTableCallbackInterfaceNoiseTransport,
     ): Unit
-    fun uniffi_hush_noise_fn_method_noisetransport_read(`ptr`: Pointer,`count`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_trueseal_noise_fn_method_noisetransport_read(`ptr`: Pointer,`count`: Long,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
-    fun uniffi_hush_noise_fn_method_noisetransport_write(`ptr`: Pointer,`data`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_trueseal_noise_fn_method_noisetransport_write(`ptr`: Pointer,`data`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
-    fun uniffi_hush_noise_fn_clone_sessionnk(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_trueseal_noise_fn_clone_sessionnk(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus, 
     ): Pointer
-    fun uniffi_hush_noise_fn_free_sessionnk(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_trueseal_noise_fn_free_sessionnk(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
-    fun uniffi_hush_noise_fn_method_sessionnk_close(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_trueseal_noise_fn_method_sessionnk_close(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
-    fun uniffi_hush_noise_fn_method_sessionnk_receive(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_trueseal_noise_fn_method_sessionnk_receive(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
-    fun uniffi_hush_noise_fn_method_sessionnk_send(`ptr`: Pointer,`payload`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_trueseal_noise_fn_method_sessionnk_send(`ptr`: Pointer,`payload`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
-    fun uniffi_hush_noise_fn_clone_sessionxx(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_trueseal_noise_fn_clone_sessionxx(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus, 
     ): Pointer
-    fun uniffi_hush_noise_fn_free_sessionxx(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_trueseal_noise_fn_free_sessionxx(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
-    fun uniffi_hush_noise_fn_method_sessionxx_close(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_trueseal_noise_fn_method_sessionxx_close(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
-    fun uniffi_hush_noise_fn_method_sessionxx_receive(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_trueseal_noise_fn_method_sessionxx_receive(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
-    fun uniffi_hush_noise_fn_method_sessionxx_remote_public_key(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_trueseal_noise_fn_method_sessionxx_remote_public_key(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
-    fun uniffi_hush_noise_fn_method_sessionxx_send(`ptr`: Pointer,`payload`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_trueseal_noise_fn_method_sessionxx_send(`ptr`: Pointer,`payload`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
-    fun uniffi_hush_noise_fn_func_accept_nk(`transport`: Pointer,`keypair`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_trueseal_noise_fn_func_accept_nk(`transport`: Pointer,`keypair`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Pointer
-    fun uniffi_hush_noise_fn_func_accept_xx(`transport`: Pointer,`keypair`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_trueseal_noise_fn_func_accept_xx(`transport`: Pointer,`keypair`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Pointer
-    fun uniffi_hush_noise_fn_func_dial_nk(`transport`: Pointer,`keypair`: RustBuffer.ByValue,`remoteStatic`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_trueseal_noise_fn_func_dial_nk(`transport`: Pointer,`keypair`: RustBuffer.ByValue,`remoteStatic`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Pointer
-    fun uniffi_hush_noise_fn_func_dial_xx(`transport`: Pointer,`keypair`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_trueseal_noise_fn_func_dial_xx(`transport`: Pointer,`keypair`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Pointer
-    fun uniffi_hush_noise_fn_func_generate_keypair(uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_trueseal_noise_fn_func_generate_keypair(uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
-    fun uniffi_hush_noise_fn_func_new_keypair(`privateKey`: RustBuffer.ByValue,`publicKey`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_trueseal_noise_fn_func_new_keypair(`privateKey`: RustBuffer.ByValue,`publicKey`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
-    fun ffi_hush_noise_rustbuffer_alloc(`size`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    fun ffi_trueseal_noise_rustbuffer_alloc(`size`: Long,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
-    fun ffi_hush_noise_rustbuffer_from_bytes(`bytes`: ForeignBytes.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    fun ffi_trueseal_noise_rustbuffer_from_bytes(`bytes`: ForeignBytes.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
-    fun ffi_hush_noise_rustbuffer_free(`buf`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    fun ffi_trueseal_noise_rustbuffer_free(`buf`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
-    fun ffi_hush_noise_rustbuffer_reserve(`buf`: RustBuffer.ByValue,`additional`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    fun ffi_trueseal_noise_rustbuffer_reserve(`buf`: RustBuffer.ByValue,`additional`: Long,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
-    fun ffi_hush_noise_rust_future_poll_u8(`handle`: Long,`callback`: UniffiRustFutureContinuationCallback,`callbackData`: Long,
+    fun ffi_trueseal_noise_rust_future_poll_u8(`handle`: Long,`callback`: UniffiRustFutureContinuationCallback,`callbackData`: Long,
     ): Unit
-    fun ffi_hush_noise_rust_future_cancel_u8(`handle`: Long,
+    fun ffi_trueseal_noise_rust_future_cancel_u8(`handle`: Long,
     ): Unit
-    fun ffi_hush_noise_rust_future_free_u8(`handle`: Long,
+    fun ffi_trueseal_noise_rust_future_free_u8(`handle`: Long,
     ): Unit
-    fun ffi_hush_noise_rust_future_complete_u8(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    fun ffi_trueseal_noise_rust_future_complete_u8(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
     ): Byte
-    fun ffi_hush_noise_rust_future_poll_i8(`handle`: Long,`callback`: UniffiRustFutureContinuationCallback,`callbackData`: Long,
+    fun ffi_trueseal_noise_rust_future_poll_i8(`handle`: Long,`callback`: UniffiRustFutureContinuationCallback,`callbackData`: Long,
     ): Unit
-    fun ffi_hush_noise_rust_future_cancel_i8(`handle`: Long,
+    fun ffi_trueseal_noise_rust_future_cancel_i8(`handle`: Long,
     ): Unit
-    fun ffi_hush_noise_rust_future_free_i8(`handle`: Long,
+    fun ffi_trueseal_noise_rust_future_free_i8(`handle`: Long,
     ): Unit
-    fun ffi_hush_noise_rust_future_complete_i8(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    fun ffi_trueseal_noise_rust_future_complete_i8(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
     ): Byte
-    fun ffi_hush_noise_rust_future_poll_u16(`handle`: Long,`callback`: UniffiRustFutureContinuationCallback,`callbackData`: Long,
+    fun ffi_trueseal_noise_rust_future_poll_u16(`handle`: Long,`callback`: UniffiRustFutureContinuationCallback,`callbackData`: Long,
     ): Unit
-    fun ffi_hush_noise_rust_future_cancel_u16(`handle`: Long,
+    fun ffi_trueseal_noise_rust_future_cancel_u16(`handle`: Long,
     ): Unit
-    fun ffi_hush_noise_rust_future_free_u16(`handle`: Long,
+    fun ffi_trueseal_noise_rust_future_free_u16(`handle`: Long,
     ): Unit
-    fun ffi_hush_noise_rust_future_complete_u16(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    fun ffi_trueseal_noise_rust_future_complete_u16(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
     ): Short
-    fun ffi_hush_noise_rust_future_poll_i16(`handle`: Long,`callback`: UniffiRustFutureContinuationCallback,`callbackData`: Long,
+    fun ffi_trueseal_noise_rust_future_poll_i16(`handle`: Long,`callback`: UniffiRustFutureContinuationCallback,`callbackData`: Long,
     ): Unit
-    fun ffi_hush_noise_rust_future_cancel_i16(`handle`: Long,
+    fun ffi_trueseal_noise_rust_future_cancel_i16(`handle`: Long,
     ): Unit
-    fun ffi_hush_noise_rust_future_free_i16(`handle`: Long,
+    fun ffi_trueseal_noise_rust_future_free_i16(`handle`: Long,
     ): Unit
-    fun ffi_hush_noise_rust_future_complete_i16(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    fun ffi_trueseal_noise_rust_future_complete_i16(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
     ): Short
-    fun ffi_hush_noise_rust_future_poll_u32(`handle`: Long,`callback`: UniffiRustFutureContinuationCallback,`callbackData`: Long,
+    fun ffi_trueseal_noise_rust_future_poll_u32(`handle`: Long,`callback`: UniffiRustFutureContinuationCallback,`callbackData`: Long,
     ): Unit
-    fun ffi_hush_noise_rust_future_cancel_u32(`handle`: Long,
+    fun ffi_trueseal_noise_rust_future_cancel_u32(`handle`: Long,
     ): Unit
-    fun ffi_hush_noise_rust_future_free_u32(`handle`: Long,
+    fun ffi_trueseal_noise_rust_future_free_u32(`handle`: Long,
     ): Unit
-    fun ffi_hush_noise_rust_future_complete_u32(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    fun ffi_trueseal_noise_rust_future_complete_u32(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
     ): Int
-    fun ffi_hush_noise_rust_future_poll_i32(`handle`: Long,`callback`: UniffiRustFutureContinuationCallback,`callbackData`: Long,
+    fun ffi_trueseal_noise_rust_future_poll_i32(`handle`: Long,`callback`: UniffiRustFutureContinuationCallback,`callbackData`: Long,
     ): Unit
-    fun ffi_hush_noise_rust_future_cancel_i32(`handle`: Long,
+    fun ffi_trueseal_noise_rust_future_cancel_i32(`handle`: Long,
     ): Unit
-    fun ffi_hush_noise_rust_future_free_i32(`handle`: Long,
+    fun ffi_trueseal_noise_rust_future_free_i32(`handle`: Long,
     ): Unit
-    fun ffi_hush_noise_rust_future_complete_i32(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    fun ffi_trueseal_noise_rust_future_complete_i32(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
     ): Int
-    fun ffi_hush_noise_rust_future_poll_u64(`handle`: Long,`callback`: UniffiRustFutureContinuationCallback,`callbackData`: Long,
+    fun ffi_trueseal_noise_rust_future_poll_u64(`handle`: Long,`callback`: UniffiRustFutureContinuationCallback,`callbackData`: Long,
     ): Unit
-    fun ffi_hush_noise_rust_future_cancel_u64(`handle`: Long,
+    fun ffi_trueseal_noise_rust_future_cancel_u64(`handle`: Long,
     ): Unit
-    fun ffi_hush_noise_rust_future_free_u64(`handle`: Long,
+    fun ffi_trueseal_noise_rust_future_free_u64(`handle`: Long,
     ): Unit
-    fun ffi_hush_noise_rust_future_complete_u64(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    fun ffi_trueseal_noise_rust_future_complete_u64(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
     ): Long
-    fun ffi_hush_noise_rust_future_poll_i64(`handle`: Long,`callback`: UniffiRustFutureContinuationCallback,`callbackData`: Long,
+    fun ffi_trueseal_noise_rust_future_poll_i64(`handle`: Long,`callback`: UniffiRustFutureContinuationCallback,`callbackData`: Long,
     ): Unit
-    fun ffi_hush_noise_rust_future_cancel_i64(`handle`: Long,
+    fun ffi_trueseal_noise_rust_future_cancel_i64(`handle`: Long,
     ): Unit
-    fun ffi_hush_noise_rust_future_free_i64(`handle`: Long,
+    fun ffi_trueseal_noise_rust_future_free_i64(`handle`: Long,
     ): Unit
-    fun ffi_hush_noise_rust_future_complete_i64(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    fun ffi_trueseal_noise_rust_future_complete_i64(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
     ): Long
-    fun ffi_hush_noise_rust_future_poll_f32(`handle`: Long,`callback`: UniffiRustFutureContinuationCallback,`callbackData`: Long,
+    fun ffi_trueseal_noise_rust_future_poll_f32(`handle`: Long,`callback`: UniffiRustFutureContinuationCallback,`callbackData`: Long,
     ): Unit
-    fun ffi_hush_noise_rust_future_cancel_f32(`handle`: Long,
+    fun ffi_trueseal_noise_rust_future_cancel_f32(`handle`: Long,
     ): Unit
-    fun ffi_hush_noise_rust_future_free_f32(`handle`: Long,
+    fun ffi_trueseal_noise_rust_future_free_f32(`handle`: Long,
     ): Unit
-    fun ffi_hush_noise_rust_future_complete_f32(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    fun ffi_trueseal_noise_rust_future_complete_f32(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
     ): Float
-    fun ffi_hush_noise_rust_future_poll_f64(`handle`: Long,`callback`: UniffiRustFutureContinuationCallback,`callbackData`: Long,
+    fun ffi_trueseal_noise_rust_future_poll_f64(`handle`: Long,`callback`: UniffiRustFutureContinuationCallback,`callbackData`: Long,
     ): Unit
-    fun ffi_hush_noise_rust_future_cancel_f64(`handle`: Long,
+    fun ffi_trueseal_noise_rust_future_cancel_f64(`handle`: Long,
     ): Unit
-    fun ffi_hush_noise_rust_future_free_f64(`handle`: Long,
+    fun ffi_trueseal_noise_rust_future_free_f64(`handle`: Long,
     ): Unit
-    fun ffi_hush_noise_rust_future_complete_f64(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    fun ffi_trueseal_noise_rust_future_complete_f64(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
     ): Double
-    fun ffi_hush_noise_rust_future_poll_pointer(`handle`: Long,`callback`: UniffiRustFutureContinuationCallback,`callbackData`: Long,
+    fun ffi_trueseal_noise_rust_future_poll_pointer(`handle`: Long,`callback`: UniffiRustFutureContinuationCallback,`callbackData`: Long,
     ): Unit
-    fun ffi_hush_noise_rust_future_cancel_pointer(`handle`: Long,
+    fun ffi_trueseal_noise_rust_future_cancel_pointer(`handle`: Long,
     ): Unit
-    fun ffi_hush_noise_rust_future_free_pointer(`handle`: Long,
+    fun ffi_trueseal_noise_rust_future_free_pointer(`handle`: Long,
     ): Unit
-    fun ffi_hush_noise_rust_future_complete_pointer(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    fun ffi_trueseal_noise_rust_future_complete_pointer(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
     ): Pointer
-    fun ffi_hush_noise_rust_future_poll_rust_buffer(`handle`: Long,`callback`: UniffiRustFutureContinuationCallback,`callbackData`: Long,
+    fun ffi_trueseal_noise_rust_future_poll_rust_buffer(`handle`: Long,`callback`: UniffiRustFutureContinuationCallback,`callbackData`: Long,
     ): Unit
-    fun ffi_hush_noise_rust_future_cancel_rust_buffer(`handle`: Long,
+    fun ffi_trueseal_noise_rust_future_cancel_rust_buffer(`handle`: Long,
     ): Unit
-    fun ffi_hush_noise_rust_future_free_rust_buffer(`handle`: Long,
+    fun ffi_trueseal_noise_rust_future_free_rust_buffer(`handle`: Long,
     ): Unit
-    fun ffi_hush_noise_rust_future_complete_rust_buffer(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    fun ffi_trueseal_noise_rust_future_complete_rust_buffer(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
-    fun ffi_hush_noise_rust_future_poll_void(`handle`: Long,`callback`: UniffiRustFutureContinuationCallback,`callbackData`: Long,
+    fun ffi_trueseal_noise_rust_future_poll_void(`handle`: Long,`callback`: UniffiRustFutureContinuationCallback,`callbackData`: Long,
     ): Unit
-    fun ffi_hush_noise_rust_future_cancel_void(`handle`: Long,
+    fun ffi_trueseal_noise_rust_future_cancel_void(`handle`: Long,
     ): Unit
-    fun ffi_hush_noise_rust_future_free_void(`handle`: Long,
+    fun ffi_trueseal_noise_rust_future_free_void(`handle`: Long,
     ): Unit
-    fun ffi_hush_noise_rust_future_complete_void(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    fun ffi_trueseal_noise_rust_future_complete_void(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
-    fun uniffi_hush_noise_checksum_func_accept_nk(
+    fun uniffi_trueseal_noise_checksum_func_accept_nk(
     ): Short
-    fun uniffi_hush_noise_checksum_func_accept_xx(
+    fun uniffi_trueseal_noise_checksum_func_accept_xx(
     ): Short
-    fun uniffi_hush_noise_checksum_func_dial_nk(
+    fun uniffi_trueseal_noise_checksum_func_dial_nk(
     ): Short
-    fun uniffi_hush_noise_checksum_func_dial_xx(
+    fun uniffi_trueseal_noise_checksum_func_dial_xx(
     ): Short
-    fun uniffi_hush_noise_checksum_func_generate_keypair(
+    fun uniffi_trueseal_noise_checksum_func_generate_keypair(
     ): Short
-    fun uniffi_hush_noise_checksum_func_new_keypair(
+    fun uniffi_trueseal_noise_checksum_func_new_keypair(
     ): Short
-    fun uniffi_hush_noise_checksum_method_noisetransport_read(
+    fun uniffi_trueseal_noise_checksum_method_noisetransport_read(
     ): Short
-    fun uniffi_hush_noise_checksum_method_noisetransport_write(
+    fun uniffi_trueseal_noise_checksum_method_noisetransport_write(
     ): Short
-    fun uniffi_hush_noise_checksum_method_sessionnk_close(
+    fun uniffi_trueseal_noise_checksum_method_sessionnk_close(
     ): Short
-    fun uniffi_hush_noise_checksum_method_sessionnk_receive(
+    fun uniffi_trueseal_noise_checksum_method_sessionnk_receive(
     ): Short
-    fun uniffi_hush_noise_checksum_method_sessionnk_send(
+    fun uniffi_trueseal_noise_checksum_method_sessionnk_send(
     ): Short
-    fun uniffi_hush_noise_checksum_method_sessionxx_close(
+    fun uniffi_trueseal_noise_checksum_method_sessionxx_close(
     ): Short
-    fun uniffi_hush_noise_checksum_method_sessionxx_receive(
+    fun uniffi_trueseal_noise_checksum_method_sessionxx_receive(
     ): Short
-    fun uniffi_hush_noise_checksum_method_sessionxx_remote_public_key(
+    fun uniffi_trueseal_noise_checksum_method_sessionxx_remote_public_key(
     ): Short
-    fun uniffi_hush_noise_checksum_method_sessionxx_send(
+    fun uniffi_trueseal_noise_checksum_method_sessionxx_send(
     ): Short
-    fun ffi_hush_noise_uniffi_contract_version(
+    fun ffi_trueseal_noise_uniffi_contract_version(
     ): Int
     
 }
@@ -989,7 +989,7 @@ private fun uniffiCheckContractApiVersion(lib: UniffiLib) {
     // Get the bindings contract version from our ComponentInterface
     val bindings_contract_version = 26
     // Get the scaffolding contract version by calling the into the dylib
-    val scaffolding_contract_version = lib.ffi_hush_noise_uniffi_contract_version()
+    val scaffolding_contract_version = lib.ffi_trueseal_noise_uniffi_contract_version()
     if (bindings_contract_version != scaffolding_contract_version) {
         throw RuntimeException("UniFFI contract version mismatch: try cleaning and rebuilding your project")
     }
@@ -997,49 +997,49 @@ private fun uniffiCheckContractApiVersion(lib: UniffiLib) {
 
 @Suppress("UNUSED_PARAMETER")
 private fun uniffiCheckApiChecksums(lib: UniffiLib) {
-    if (lib.uniffi_hush_noise_checksum_func_accept_nk() != 43024.toShort()) {
+    if (lib.uniffi_trueseal_noise_checksum_func_accept_nk() != 43024.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_hush_noise_checksum_func_accept_xx() != 53523.toShort()) {
+    if (lib.uniffi_trueseal_noise_checksum_func_accept_xx() != 53523.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_hush_noise_checksum_func_dial_nk() != 29510.toShort()) {
+    if (lib.uniffi_trueseal_noise_checksum_func_dial_nk() != 29510.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_hush_noise_checksum_func_dial_xx() != 23894.toShort()) {
+    if (lib.uniffi_trueseal_noise_checksum_func_dial_xx() != 23894.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_hush_noise_checksum_func_generate_keypair() != 11051.toShort()) {
+    if (lib.uniffi_trueseal_noise_checksum_func_generate_keypair() != 11051.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_hush_noise_checksum_func_new_keypair() != 11259.toShort()) {
+    if (lib.uniffi_trueseal_noise_checksum_func_new_keypair() != 11259.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_hush_noise_checksum_method_noisetransport_read() != 37030.toShort()) {
+    if (lib.uniffi_trueseal_noise_checksum_method_noisetransport_read() != 37030.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_hush_noise_checksum_method_noisetransport_write() != 52014.toShort()) {
+    if (lib.uniffi_trueseal_noise_checksum_method_noisetransport_write() != 52014.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_hush_noise_checksum_method_sessionnk_close() != 3258.toShort()) {
+    if (lib.uniffi_trueseal_noise_checksum_method_sessionnk_close() != 3258.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_hush_noise_checksum_method_sessionnk_receive() != 5419.toShort()) {
+    if (lib.uniffi_trueseal_noise_checksum_method_sessionnk_receive() != 5419.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_hush_noise_checksum_method_sessionnk_send() != 35038.toShort()) {
+    if (lib.uniffi_trueseal_noise_checksum_method_sessionnk_send() != 35038.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_hush_noise_checksum_method_sessionxx_close() != 19936.toShort()) {
+    if (lib.uniffi_trueseal_noise_checksum_method_sessionxx_close() != 19936.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_hush_noise_checksum_method_sessionxx_receive() != 26703.toShort()) {
+    if (lib.uniffi_trueseal_noise_checksum_method_sessionxx_receive() != 26703.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_hush_noise_checksum_method_sessionxx_remote_public_key() != 10024.toShort()) {
+    if (lib.uniffi_trueseal_noise_checksum_method_sessionxx_remote_public_key() != 10024.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_hush_noise_checksum_method_sessionxx_send() != 30602.toShort()) {
+    if (lib.uniffi_trueseal_noise_checksum_method_sessionxx_send() != 30602.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
 }
@@ -1448,7 +1448,7 @@ open class NoiseTransportImpl: Disposable, AutoCloseable, NoiseTransport {
         override fun run() {
             pointer?.let { ptr ->
                 uniffiRustCall { status ->
-                    UniffiLib.INSTANCE.uniffi_hush_noise_fn_free_noisetransport(ptr, status)
+                    UniffiLib.INSTANCE.uniffi_trueseal_noise_fn_free_noisetransport(ptr, status)
                 }
             }
         }
@@ -1456,7 +1456,7 @@ open class NoiseTransportImpl: Disposable, AutoCloseable, NoiseTransport {
 
     fun uniffiClonePointer(): Pointer {
         return uniffiRustCall() { status ->
-            UniffiLib.INSTANCE.uniffi_hush_noise_fn_clone_noisetransport(pointer!!, status)
+            UniffiLib.INSTANCE.uniffi_trueseal_noise_fn_clone_noisetransport(pointer!!, status)
         }
     }
 
@@ -1465,7 +1465,7 @@ open class NoiseTransportImpl: Disposable, AutoCloseable, NoiseTransport {
             return FfiConverterSequenceUByte.lift(
     callWithPointer {
     uniffiRustCallWithError(NoiseException) { _status ->
-    UniffiLib.INSTANCE.uniffi_hush_noise_fn_method_noisetransport_read(
+    UniffiLib.INSTANCE.uniffi_trueseal_noise_fn_method_noisetransport_read(
         it, FfiConverterULong.lower(`count`),_status)
 }
     }
@@ -1478,7 +1478,7 @@ open class NoiseTransportImpl: Disposable, AutoCloseable, NoiseTransport {
         = 
     callWithPointer {
     uniffiRustCallWithError(NoiseException) { _status ->
-    UniffiLib.INSTANCE.uniffi_hush_noise_fn_method_noisetransport_write(
+    UniffiLib.INSTANCE.uniffi_trueseal_noise_fn_method_noisetransport_write(
         it, FfiConverterSequenceUByte.lower(`data`),_status)
 }
     }
@@ -1577,7 +1577,7 @@ internal object uniffiCallbackInterfaceNoiseTransport {
     // Registers the foreign callback with the Rust side.
     // This method is generated for each callback interface.
     internal fun register(lib: UniffiLib) {
-        lib.uniffi_hush_noise_fn_init_callback_vtable_noisetransport(vtable)
+        lib.uniffi_trueseal_noise_fn_init_callback_vtable_noisetransport(vtable)
     }
 }
 
@@ -1801,7 +1801,7 @@ open class SessionNk: Disposable, AutoCloseable, SessionNkInterface {
         override fun run() {
             pointer?.let { ptr ->
                 uniffiRustCall { status ->
-                    UniffiLib.INSTANCE.uniffi_hush_noise_fn_free_sessionnk(ptr, status)
+                    UniffiLib.INSTANCE.uniffi_trueseal_noise_fn_free_sessionnk(ptr, status)
                 }
             }
         }
@@ -1809,7 +1809,7 @@ open class SessionNk: Disposable, AutoCloseable, SessionNkInterface {
 
     fun uniffiClonePointer(): Pointer {
         return uniffiRustCall() { status ->
-            UniffiLib.INSTANCE.uniffi_hush_noise_fn_clone_sessionnk(pointer!!, status)
+            UniffiLib.INSTANCE.uniffi_trueseal_noise_fn_clone_sessionnk(pointer!!, status)
         }
     }
 
@@ -1818,7 +1818,7 @@ open class SessionNk: Disposable, AutoCloseable, SessionNkInterface {
         = 
     callWithPointer {
     uniffiRustCallWithError(NoiseException) { _status ->
-    UniffiLib.INSTANCE.uniffi_hush_noise_fn_method_sessionnk_close(
+    UniffiLib.INSTANCE.uniffi_trueseal_noise_fn_method_sessionnk_close(
         it, _status)
 }
     }
@@ -1830,7 +1830,7 @@ open class SessionNk: Disposable, AutoCloseable, SessionNkInterface {
             return FfiConverterSequenceUByte.lift(
     callWithPointer {
     uniffiRustCallWithError(NoiseException) { _status ->
-    UniffiLib.INSTANCE.uniffi_hush_noise_fn_method_sessionnk_receive(
+    UniffiLib.INSTANCE.uniffi_trueseal_noise_fn_method_sessionnk_receive(
         it, _status)
 }
     }
@@ -1843,7 +1843,7 @@ open class SessionNk: Disposable, AutoCloseable, SessionNkInterface {
         = 
     callWithPointer {
     uniffiRustCallWithError(NoiseException) { _status ->
-    UniffiLib.INSTANCE.uniffi_hush_noise_fn_method_sessionnk_send(
+    UniffiLib.INSTANCE.uniffi_trueseal_noise_fn_method_sessionnk_send(
         it, FfiConverterSequenceUByte.lower(`payload`),_status)
 }
     }
@@ -2083,7 +2083,7 @@ open class SessionXx: Disposable, AutoCloseable, SessionXxInterface {
         override fun run() {
             pointer?.let { ptr ->
                 uniffiRustCall { status ->
-                    UniffiLib.INSTANCE.uniffi_hush_noise_fn_free_sessionxx(ptr, status)
+                    UniffiLib.INSTANCE.uniffi_trueseal_noise_fn_free_sessionxx(ptr, status)
                 }
             }
         }
@@ -2091,7 +2091,7 @@ open class SessionXx: Disposable, AutoCloseable, SessionXxInterface {
 
     fun uniffiClonePointer(): Pointer {
         return uniffiRustCall() { status ->
-            UniffiLib.INSTANCE.uniffi_hush_noise_fn_clone_sessionxx(pointer!!, status)
+            UniffiLib.INSTANCE.uniffi_trueseal_noise_fn_clone_sessionxx(pointer!!, status)
         }
     }
 
@@ -2100,7 +2100,7 @@ open class SessionXx: Disposable, AutoCloseable, SessionXxInterface {
         = 
     callWithPointer {
     uniffiRustCallWithError(NoiseException) { _status ->
-    UniffiLib.INSTANCE.uniffi_hush_noise_fn_method_sessionxx_close(
+    UniffiLib.INSTANCE.uniffi_trueseal_noise_fn_method_sessionxx_close(
         it, _status)
 }
     }
@@ -2112,7 +2112,7 @@ open class SessionXx: Disposable, AutoCloseable, SessionXxInterface {
             return FfiConverterSequenceUByte.lift(
     callWithPointer {
     uniffiRustCallWithError(NoiseException) { _status ->
-    UniffiLib.INSTANCE.uniffi_hush_noise_fn_method_sessionxx_receive(
+    UniffiLib.INSTANCE.uniffi_trueseal_noise_fn_method_sessionxx_receive(
         it, _status)
 }
     }
@@ -2128,7 +2128,7 @@ open class SessionXx: Disposable, AutoCloseable, SessionXxInterface {
             return FfiConverterSequenceUByte.lift(
     callWithPointer {
     uniffiRustCall() { _status ->
-    UniffiLib.INSTANCE.uniffi_hush_noise_fn_method_sessionxx_remote_public_key(
+    UniffiLib.INSTANCE.uniffi_trueseal_noise_fn_method_sessionxx_remote_public_key(
         it, _status)
 }
     }
@@ -2141,7 +2141,7 @@ open class SessionXx: Disposable, AutoCloseable, SessionXxInterface {
         = 
     callWithPointer {
     uniffiRustCallWithError(NoiseException) { _status ->
-    UniffiLib.INSTANCE.uniffi_hush_noise_fn_method_sessionxx_send(
+    UniffiLib.INSTANCE.uniffi_trueseal_noise_fn_method_sessionxx_send(
         it, FfiConverterSequenceUByte.lower(`payload`),_status)
 }
     }
@@ -2225,7 +2225,7 @@ public object FfiConverterTypeKeypairRecord: FfiConverterRustBuffer<KeypairRecor
 
 
 /**
- * Errors returned by the hush-noise API.
+ * Errors returned by the trueseal-noise API.
  */
 sealed class NoiseException: kotlin.Exception() {
     
@@ -2368,7 +2368,7 @@ public object FfiConverterSequenceUByte: FfiConverterRustBuffer<List<kotlin.UByt
     @Throws(NoiseException::class) fun `acceptNk`(`transport`: NoiseTransport, `keypair`: KeypairRecord): SessionNk {
             return FfiConverterTypeSessionNk.lift(
     uniffiRustCallWithError(NoiseException) { _status ->
-    UniffiLib.INSTANCE.uniffi_hush_noise_fn_func_accept_nk(
+    UniffiLib.INSTANCE.uniffi_trueseal_noise_fn_func_accept_nk(
         FfiConverterTypeNoiseTransport.lower(`transport`),FfiConverterTypeKeypairRecord.lower(`keypair`),_status)
 }
     )
@@ -2383,7 +2383,7 @@ public object FfiConverterSequenceUByte: FfiConverterRustBuffer<List<kotlin.UByt
     @Throws(NoiseException::class) fun `acceptXx`(`transport`: NoiseTransport, `keypair`: KeypairRecord): SessionXx {
             return FfiConverterTypeSessionXx.lift(
     uniffiRustCallWithError(NoiseException) { _status ->
-    UniffiLib.INSTANCE.uniffi_hush_noise_fn_func_accept_xx(
+    UniffiLib.INSTANCE.uniffi_trueseal_noise_fn_func_accept_xx(
         FfiConverterTypeNoiseTransport.lower(`transport`),FfiConverterTypeKeypairRecord.lower(`keypair`),_status)
 }
     )
@@ -2400,7 +2400,7 @@ public object FfiConverterSequenceUByte: FfiConverterRustBuffer<List<kotlin.UByt
     @Throws(NoiseException::class) fun `dialNk`(`transport`: NoiseTransport, `keypair`: KeypairRecord, `remoteStatic`: List<kotlin.UByte>): SessionNk {
             return FfiConverterTypeSessionNk.lift(
     uniffiRustCallWithError(NoiseException) { _status ->
-    UniffiLib.INSTANCE.uniffi_hush_noise_fn_func_dial_nk(
+    UniffiLib.INSTANCE.uniffi_trueseal_noise_fn_func_dial_nk(
         FfiConverterTypeNoiseTransport.lower(`transport`),FfiConverterTypeKeypairRecord.lower(`keypair`),FfiConverterSequenceUByte.lower(`remoteStatic`),_status)
 }
     )
@@ -2415,7 +2415,7 @@ public object FfiConverterSequenceUByte: FfiConverterRustBuffer<List<kotlin.UByt
     @Throws(NoiseException::class) fun `dialXx`(`transport`: NoiseTransport, `keypair`: KeypairRecord): SessionXx {
             return FfiConverterTypeSessionXx.lift(
     uniffiRustCallWithError(NoiseException) { _status ->
-    UniffiLib.INSTANCE.uniffi_hush_noise_fn_func_dial_xx(
+    UniffiLib.INSTANCE.uniffi_trueseal_noise_fn_func_dial_xx(
         FfiConverterTypeNoiseTransport.lower(`transport`),FfiConverterTypeKeypairRecord.lower(`keypair`),_status)
 }
     )
@@ -2427,7 +2427,7 @@ public object FfiConverterSequenceUByte: FfiConverterRustBuffer<List<kotlin.UByt
          */ fun `generateKeypair`(): KeypairRecord {
             return FfiConverterTypeKeypairRecord.lift(
     uniffiRustCall() { _status ->
-    UniffiLib.INSTANCE.uniffi_hush_noise_fn_func_generate_keypair(
+    UniffiLib.INSTANCE.uniffi_trueseal_noise_fn_func_generate_keypair(
         _status)
 }
     )
@@ -2439,7 +2439,7 @@ public object FfiConverterSequenceUByte: FfiConverterRustBuffer<List<kotlin.UByt
          */ fun `newKeypair`(`privateKey`: List<kotlin.UByte>, `publicKey`: List<kotlin.UByte>): KeypairRecord {
             return FfiConverterTypeKeypairRecord.lift(
     uniffiRustCall() { _status ->
-    UniffiLib.INSTANCE.uniffi_hush_noise_fn_func_new_keypair(
+    UniffiLib.INSTANCE.uniffi_trueseal_noise_fn_func_new_keypair(
         FfiConverterSequenceUByte.lower(`privateKey`),FfiConverterSequenceUByte.lower(`publicKey`),_status)
 }
     )

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # scripts/build-android.sh
 #
-# Cross-compile hush-sync for Android (arm64-v8a + x86_64), generate UniFFI
+# Cross-compile trueseal-sync for Android (arm64-v8a + x86_64), generate UniFFI
 # Kotlin bindings, and copy everything into the library module ready for Gradle.
 #
 # Prerequisites:
@@ -19,14 +19,14 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
-RUST_DIR="$(cd "$REPO_ROOT/../hush-sync" && pwd)"
+RUST_DIR="$(cd "$REPO_ROOT/../trueseal-sync" && pwd)"
 
 PROFILE="${PROFILE:-release}"
-CRATE_NAME="hush_sync"
+CRATE_NAME="trueseal_sync"
 
 # Use a writable target dir outside the Rust source tree to avoid macOS
 # com.apple.provenance lock file issues.
-export CARGO_TARGET_DIR="${CARGO_TARGET_DIR:-/tmp/hush-sync-android-build}"
+export CARGO_TARGET_DIR="${CARGO_TARGET_DIR:-/tmp/trueseal-sync-android-build}"
 
 # Android NDK — check common locations
 NDK_HOME="${ANDROID_NDK_HOME:-}"
@@ -81,7 +81,7 @@ TARGETS=(
     "x86_64-linux-android:x86_64"
 )
 
-step "Cross-compiling hush-sync for Android targets (profile=$PROFILE)"
+step "Cross-compiling trueseal-sync for Android targets (profile=$PROFILE)"
 
 for entry in "${TARGETS[@]}"; do
     RUST_TARGET="${entry%%:*}"
@@ -123,7 +123,7 @@ fi
 
 [[ -f "$HOST_DYLIB" ]] || fail "Host dylib missing: $HOST_DYLIB"
 
-BINDGEN_TMP="/tmp/hush-kotlin-bindings-$$"
+BINDGEN_TMP="/tmp/trueseal-kotlin-bindings-$$"
 mkdir -p "$BINDGEN_TMP"
 
 (
@@ -136,9 +136,9 @@ mkdir -p "$BINDGEN_TMP"
 )
 
 # Copy generated files into the library source tree
-mkdir -p "$BINDINGS_DIR/uniffi/hush_sync" "$BINDINGS_DIR/uniffi/hush_noise"
-cp "$BINDGEN_TMP/uniffi/hush_sync/hush_sync.kt"   "$BINDINGS_DIR/uniffi/hush_sync/hush_sync.kt"
-cp "$BINDGEN_TMP/uniffi/hush_noise/hush_noise.kt" "$BINDINGS_DIR/uniffi/hush_noise/hush_noise.kt"
+mkdir -p "$BINDINGS_DIR/uniffi/trueseal_sync" "$BINDINGS_DIR/uniffi/trueseal_noise"
+cp "$BINDGEN_TMP/uniffi/trueseal_sync/trueseal_sync.kt"   "$BINDINGS_DIR/uniffi/trueseal_sync/trueseal_sync.kt"
+cp "$BINDGEN_TMP/uniffi/trueseal_noise/trueseal_noise.kt" "$BINDINGS_DIR/uniffi/trueseal_noise/trueseal_noise.kt"
 rm -rf "$BINDGEN_TMP"
 
 ok "Bindings written to $BINDINGS_DIR"

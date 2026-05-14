@@ -15,27 +15,27 @@ jobs:
 
     steps:
       # ── Checkouts ─────────────────────────────────────────────────────────
-      # Repos must be siblings so the Cargo path deps (../hush-noise/rust)
-      # and the build script (../hush-sync) resolve correctly.
+      # Repos must be siblings so the Cargo path deps (../trueseal-noise/rust)
+      # and the build script (../trueseal-sync) resolve correctly.
 
-      - name: Checkout hush-sync-kotlin
+      - name: Checkout trueseal-sync-kotlin
         uses: actions/checkout@v4
         with:
-          path: hush-sync-kotlin
+          path: trueseal-sync-kotlin
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Checkout hush-sync
+      - name: Checkout trueseal-sync
         uses: actions/checkout@v4
         with:
-          repository: buenomini/hush-sync
-          path: hush-sync
+          repository: buenomini/trueseal-sync
+          path: trueseal-sync
           token: ${{ secrets.PAT }}
 
-      - name: Checkout hush-noise
+      - name: Checkout trueseal-noise
         uses: actions/checkout@v4
         with:
-          repository: buenomini/hush-noise
-          path: hush-noise
+          repository: buenomini/trueseal-noise
+          path: trueseal-noise
           token: ${{ secrets.PAT }}
 
       # ── Java / Android SDK ────────────────────────────────────────────────
@@ -67,14 +67,14 @@ jobs:
       - name: Cache Rust build artefacts
         uses: Swatinem/rust-cache@v2
         with:
-          workspaces: hush-sync -> target
+          workspaces: trueseal-sync -> target
 
       # ── Build .so + generate Kotlin bindings ──────────────────────────────
 
       - name: Build Android .so + generate bindings
-        working-directory: hush-sync-kotlin
+        working-directory: trueseal-sync-kotlin
         env:
-          CARGO_TARGET_DIR: /tmp/hush-sync-android-build
+          CARGO_TARGET_DIR: /tmp/trueseal-sync-android-build
         run: bash scripts/build-android.sh
 
       # ── Assemble AAR ──────────────────────────────────────────────────────
@@ -83,7 +83,7 @@ jobs:
         run: echo "VERSION_NAME=${GITHUB_REF_NAME#v}" >> "$GITHUB_ENV"
 
       - name: Assemble release AAR
-        working-directory: hush-sync-kotlin
+        working-directory: trueseal-sync-kotlin
         run: ./gradlew lib:assembleRelease -PVERSION_NAME="$VERSION_NAME"
 
       # ── Commit generated artefacts to main ────────────────────────────────
@@ -91,7 +91,7 @@ jobs:
       # can build without re-running the build script.
 
       - name: Commit generated artefacts to main
-        working-directory: hush-sync-kotlin
+        working-directory: trueseal-sync-kotlin
         env:
           TAG: ${{ github.ref_name }}
         run: |
@@ -107,6 +107,6 @@ jobs:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          files: hush-sync-kotlin/lib/build/outputs/aar/lib-release.aar
+          files: trueseal-sync-kotlin/lib/build/outputs/aar/lib-release.aar
           generate_release_notes: true
           fail_on_unmatched_files: true

@@ -5,7 +5,7 @@ plugins {
 }
 
 android {
-    namespace   = "dev.hush.sync"
+    namespace   = "dev.trueseal.sync"
     compileSdk  = 34
 
     defaultConfig {
@@ -57,8 +57,8 @@ dependencies {
 publishing {
     publications {
         register<MavenPublication>("release") {
-            groupId    = "dev.hush"
-            artifactId = "hush-sync-kotlin"
+            groupId    = "dev.trueseal"
+            artifactId = "trueseal-sync-kotlin"
             version    = findProperty("VERSION_NAME")?.toString() ?: "0.1.0"
 
             afterEvaluate {
@@ -66,9 +66,9 @@ publishing {
             }
 
             pom {
-                name.set("hush-sync-kotlin")
-                description.set("Android SDK for hush-sync — E2EE local-first sync.")
-                url.set("https://github.com/buenomini/hush-sync-kotlin")
+                name.set("trueseal-sync-kotlin")
+                description.set("Android SDK for trueseal-sync — E2EE local-first sync.")
+                url.set("https://github.com/buenomini/trueseal-sync-kotlin")
                 licenses {
                     license {
                         name.set("MIT")

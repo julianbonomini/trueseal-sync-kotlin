@@ -1,24 +1,24 @@
-package dev.hush.sync
+package dev.trueseal.sync
 
 import android.content.Context
-import dev.hush.sync.internal.*
+import dev.trueseal.sync.internal.*
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.receiveAsFlow
-import uniffi.hush_sync.HushFfiSession
-import uniffi.hush_sync.SessionException
+import uniffi.trueseal_sync.TruesealFfiSession
+import uniffi.trueseal_sync.SessionException
 import java.io.File
 
 /**
- * The entry point for the HushSync Android SDK.
+ * The entry point for the TruesealSync Android SDK.
  *
- * Wraps [HushFfiSession] (UniFFI-generated) with an idiomatic Kotlin/Coroutines API.
+ * Wraps [TruesealFfiSession] (UniFFI-generated) with an idiomatic Kotlin/Coroutines API.
  * No FFI types, raw bytes, or Noise Protocol concepts appear in the public surface.
  *
  * ## Lifecycle
  *
  * ```kotlin
- * val client = HushSyncClient(
+ * val client = TruesealSyncClient(
  *     context        = applicationContext,
  *     relayHost      = "relay.example.com",
  *     relayPublicKey = Base64.decode("<32-byte relay key, base64>", Base64.DEFAULT),
@@ -49,11 +49,11 @@ import java.io.File
  *     .launchIn(lifecycleScope)
  * ```
  */
-class HushSyncClient(
+class TruesealSyncClient(
     context: Context,
     relayHost: String,
     relayPublicKey: ByteArray,
-    storageDirectory: File = context.filesDir.resolve("HushSync"),
+    storageDirectory: File = context.filesDir.resolve("TruesealSync"),
     namespace: String = "default",
 ) : java.io.Closeable {
 
@@ -66,7 +66,7 @@ class HushSyncClient(
 
     // ── Private state ─────────────────────────────────────────────────────────
 
-    private val session: HushFfiSession
+    private val session: TruesealFfiSession
 
     // ── Public Flows ──────────────────────────────────────────────────────────
 
@@ -128,7 +128,7 @@ class HushSyncClient(
         val leftHandler       = MemberLeftCallbackHandler(memberChannel)
 
         try {
-            session = HushFfiSession.`create`(
+            session = TruesealFfiSession.`create`(
                 baseDir             = storageDirectory.absolutePath,
                 namespace           = namespace,
                 relayHost           = relayHost,
@@ -139,7 +139,7 @@ class HushSyncClient(
                 onConnectionChanged = connHandler,
             )
         } catch (e: SessionException) {
-            throw HushSyncError.from(e)
+            throw TruesealSyncError.from(e)
         }
 
         session.`setOnMemberRequest`(pairingHandler)
@@ -168,14 +168,14 @@ class HushSyncClient(
      * [acceptPairingRequest] to finalise membership.
      *
      * @param token Token obtained from the initiating device (QR scan, etc.).
-     * @throws HushSyncError.InvalidPairingToken if the token is malformed or expired.
+     * @throws TruesealSyncError.InvalidPairingToken if the token is malformed or expired.
      */
-    @Throws(HushSyncError::class)
+    @Throws(TruesealSyncError::class)
     fun joinGroup(token: String) {
         try {
             session.`joinGroup`(token)
         } catch (e: SessionException) {
-            throw HushSyncError.from(e)
+            throw TruesealSyncError.from(e)
         }
     }
 
@@ -191,7 +191,7 @@ class HushSyncClient(
         try {
             session.`acceptMember`(request.token)
         } catch (e: SessionException) {
-            throw HushSyncError.from(e)
+            throw TruesealSyncError.from(e)
         }
     }
 
@@ -202,7 +202,7 @@ class HushSyncClient(
         try {
             session.`cancelPairing`()
         } catch (e: SessionException) {
-            throw HushSyncError.from(e)
+            throw TruesealSyncError.from(e)
         }
     }
 
@@ -212,28 +212,28 @@ class HushSyncClient(
      * Encrypt [data] and fan it out to every current Sync Group member.
      *
      * If the relay is unreachable the blob is durably queued in the local outbox
-     * and delivered automatically on reconnect. Do **not** retry on [HushSyncError.PushFailed]
+     * and delivered automatically on reconnect. Do **not** retry on [TruesealSyncError.PushFailed]
      * — the blob is already queued.
      *
      * @param data Application payload. The relay never sees the plaintext.
-     * @throws HushSyncError.NotInGroup if pairing has not completed.
-     * @throws HushSyncError.GroupDestroyed if the group has been destroyed.
+     * @throws TruesealSyncError.NotInGroup if pairing has not completed.
+     * @throws TruesealSyncError.GroupDestroyed if the group has been destroyed.
      */
-    @Throws(HushSyncError::class)
+    @Throws(TruesealSyncError::class)
     fun publish(data: ByteArray) {
         try {
             session.`send`(data)
         } catch (e: SessionException) {
-            throw HushSyncError.from(e)
+            throw TruesealSyncError.from(e)
         }
     }
 
     /**
      * Convenience: publish a UTF-8 string.
      *
-     * @throws HushSyncError Same as [publish].
+     * @throws TruesealSyncError Same as [publish].
      */
-    @Throws(HushSyncError::class)
+    @Throws(TruesealSyncError::class)
     fun publish(text: String) = publish(text.toByteArray(Charsets.UTF_8))
 
     // ── Members ───────────────────────────────────────────────────────────────
@@ -274,15 +274,15 @@ class HushSyncClient(
      * remaining members. The removed device fires [MemberEvent.RemovedSelf].
      *
      * @param member A value obtained from [members].
-     * @throws HushSyncError.NotInGroup
-     * @throws HushSyncError.MemberNotFound
+     * @throws TruesealSyncError.NotInGroup
+     * @throws TruesealSyncError.MemberNotFound
      */
-    @Throws(HushSyncError::class)
+    @Throws(TruesealSyncError::class)
     fun removeMember(member: SyncMember) {
         try {
             session.`removeMember`(member.id)
         } catch (e: SessionException) {
-            throw HushSyncError.from(e)
+            throw TruesealSyncError.from(e)
         }
     }
 
@@ -298,7 +298,7 @@ class HushSyncClient(
      * Use for security incidents (stolen/compromised device). For routine member
      * removal, prefer [removeMember].
      *
-     * After calling this, create a new [HushSyncClient] with the same namespace to
+     * After calling this, create a new [TruesealSyncClient] with the same namespace to
      * start fresh with a new identity. Note: you should also call [close] on this
      * instance to release native resources.
      */
@@ -306,7 +306,7 @@ class HushSyncClient(
         try {
             session.`destroyGroup`()
         } catch (e: SessionException) {
-            throw HushSyncError.from(e)
+            throw TruesealSyncError.from(e)
         }
     }
 
@@ -320,7 +320,7 @@ class HushSyncClient(
      *
      * Call from `onDestroy` or use the `use { }` block:
      * ```kotlin
-     * HushSyncClient(...).use { client ->
+     * TruesealSyncClient(...).use { client ->
      *     client.publish("hello")
      * }
      * ```

@@ -1,4 +1,4 @@
-# hush-sync-kotlin — consumer ProGuard rules
+# trueseal-sync-kotlin — consumer ProGuard rules
 #
 # These rules are merged into the consuming app's R8/ProGuard config automatically
 # when the library is added as a dependency.
@@ -11,5 +11,5 @@
 
 # ── UniFFI generated code ─────────────────────────────────────────────────────
 # UniFFI Kotlin glue implements JNA callback interfaces via anonymous inner classes.
--keep class uniffi.hush_sync.** { *; }
--keep class uniffi.hush_noise.** { *; }
+-keep class uniffi.trueseal_sync.** { *; }
+-keep class uniffi.trueseal_noise.** { *; }

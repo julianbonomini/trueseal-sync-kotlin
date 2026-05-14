@@ -1,4 +1,4 @@
-package dev.hush.sync
+package dev.trueseal.sync
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
@@ -9,10 +9,10 @@ class ReceivedBlobTest {
     @Test
     fun `text returns UTF-8 string when payload is valid UTF-8`() {
         val blob = ReceivedBlob(
-            data = "Hello, hush!".toByteArray(Charsets.UTF_8),
+            data = "Hello, trueseal!".toByteArray(Charsets.UTF_8),
             senderPublicKey = ByteArray(32)
         )
-        assertEquals("Hello, hush!", blob.text)
+        assertEquals("Hello, trueseal!", blob.text)
     }
 
     @Test

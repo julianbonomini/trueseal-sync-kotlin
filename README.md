@@ -1,10 +1,10 @@
-# hush-sync-kotlin
+# trueseal-sync-kotlin
 
-Android SDK for [hush-sync](https://github.com/buenomini/hush-sync) — E2EE, local-first sync between devices. Device identity, pairing, encrypted delivery, and outbox replay. No accounts. No server-side keys.
+Android SDK for [trueseal-sync](https://github.com/buenomini/trueseal-sync) — E2EE, local-first sync between devices. Device identity, pairing, encrypted delivery, and outbox replay. No accounts. No server-side keys.
 
-[![JitPack](https://jitpack.io/v/buenomini/hush-sync-kotlin.svg)](https://jitpack.io/#buenomini/hush-sync-kotlin)
+[![JitPack](https://jitpack.io/v/buenomini/trueseal-sync-kotlin.svg)](https://jitpack.io/#buenomini/trueseal-sync-kotlin)
 
-For architecture, protocol semantics, and integration patterns see the **[hush-sync integration guide](https://github.com/buenomini/hush-sync/blob/main/docs/integrating-hush-sync.md)**.
+For architecture, protocol semantics, and integration patterns see the **[trueseal-sync integration guide](https://github.com/buenomini/trueseal-sync/blob/main/docs/integrating-trueseal-sync.md)**.
 
 ---
 
@@ -24,7 +24,7 @@ dependencyResolutionManagement {
 ```kotlin
 // app/build.gradle.kts
 dependencies {
-    implementation("com.github.buenomini:hush-sync-kotlin:<version>")
+    implementation("com.github.buenomini:trueseal-sync-kotlin:<version>")
 }
 ```
 
@@ -37,21 +37,21 @@ No Rust toolchain needed — pre-built `.so` files (`arm64-v8a`, `x86_64`) are b
 ## Initialise
 
 ```kotlin
-val client = HushSyncClient(
+val client = TruesealSyncClient(
     context        = applicationContext,
-    relayHost      = "relay.example.com",               // your hush-relay host
+    relayHost      = "relay.example.com",               // your trueseal-relay host
     relayPublicKey = hexToBytes("..."),                  // relay's 32-byte X25519 pubkey
     namespace      = "myapp",                            // scope to your app; see note below
 )
 ```
 
 `relayHost` and `relayPublicKey` are build-time constants — not user-configurable.
-See [how to get the relay public key](https://github.com/buenomini/hush-sync/blob/main/docs/integrating-hush-sync.md#relay-public-key).
+See [how to get the relay public key](https://github.com/buenomini/trueseal-sync/blob/main/docs/integrating-trueseal-sync.md#relay-public-key).
 
 **`namespace`:** always pass an explicit value scoped to your app (`"com.example.myapp"`).
 The default is `"default"` — fine for a single app, wrong if multiple apps share the device.
 
-**Init failure is fatal.** A thrown `HushSyncError` at construction means bad arguments or corrupt storage. Do not catch and retry — surface it as a crash or show an unrecoverable error screen.
+**Init failure is fatal.** A thrown `TruesealSyncError` at construction means bad arguments or corrupt storage. Do not catch and retry — surface it as a crash or show an unrecoverable error screen.
 
 ---
 
@@ -107,7 +107,7 @@ clientA.pairingRequests
 
 // ── Device B (joiner) ─────────────────────────────────────────────────────────
 
-clientB.joinGroup(token)                    // throws HushSyncError.InvalidPairingToken if bad
+clientB.joinGroup(token)                    // throws TruesealSyncError.InvalidPairingToken if bad
 ```
 
 After `acceptPairingRequest`, both devices receive `MemberEvent.Joined` with the new member's ID and name.
@@ -168,16 +168,16 @@ Destroy is a **security primitive** (compromised device, fresh start), not a rou
 ```kotlin
 client.destroyGroup()
 // Sends Revoke to all members. Every device receives MemberEvent.GroupDestroyed.
-// All Flows complete. Call close() and reinitialise with a new HushSyncClient.
+// All Flows complete. Call close() and reinitialise with a new TruesealSyncClient.
 ```
 
-There is no "leave quietly" protocol — see the [integration guide §9](https://github.com/buenomini/hush-sync/blob/main/docs/integrating-hush-sync.md#9-group-exit) for the workaround.
+There is no "leave quietly" protocol — see the [integration guide §9](https://github.com/buenomini/trueseal-sync/blob/main/docs/integrating-trueseal-sync.md#9-group-exit) for the workaround.
 
 ---
 
 ## Error handling
 
-All errors are `HushSyncError` — a sealed class extending `Exception`:
+All errors are `TruesealSyncError` — a sealed class extending `Exception`:
 
 | Variant | When |
 |---|---|
@@ -192,12 +192,12 @@ All errors are `HushSyncError` — a sealed class extending `Exception`:
 ```kotlin
 try {
     client.publish(payload)
-} catch (e: HushSyncError.PushFailed) {
+} catch (e: TruesealSyncError.PushFailed) {
     // Blob is already in the outbox. No action needed.
-} catch (e: HushSyncError.NotInGroup) {
+} catch (e: TruesealSyncError.NotInGroup) {
     // Guide user through pairing first.
-} catch (e: HushSyncError) {
-    Log.e("HushSync", e.message)
+} catch (e: TruesealSyncError) {
+    Log.e("TruesealSync", e.message)
 }
 ```
 
@@ -205,7 +205,7 @@ try {
 
 ## Lifecycle
 
-`HushSyncClient` implements `Closeable`. Close it to stop background tasks and complete all Flows.
+`TruesealSyncClient` implements `Closeable`. Close it to stop background tasks and complete all Flows.
 
 ```kotlin
 // Activity / Fragment
@@ -217,7 +217,7 @@ override fun onDestroy() {
 
 ```kotlin
 // Scoped usage
-HushSyncClient(context, relayHost, relayPublicKey).use { client ->
+TruesealSyncClient(context, relayHost, relayPublicKey).use { client ->
     client.publish("hello")
 }
 ```
@@ -231,10 +231,10 @@ HushSyncClient(context, relayHost, relayPublicKey).use { client ->
 Requires a Rust toolchain, Android NDK, and sibling repos at the same level:
 
 ```
-hush/
-  hush-noise/
-  hush-sync/
-  hush-sync-kotlin/
+trueseal/
+  trueseal-noise/
+  trueseal-sync/
+  trueseal-sync-kotlin/
 ```
 
 ```bash

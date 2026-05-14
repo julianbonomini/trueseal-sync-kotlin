@@ -1,11 +1,11 @@
-package dev.hush.sync
+package dev.trueseal.sync
 
 // ── ReceivedBlob ──────────────────────────────────────────────────────────────
 
 /**
  * A blob delivered to this device from another Sync Group member.
  *
- * The raw bytes are whatever the sender passed to [HushSyncClient.publish].
+ * The raw bytes are whatever the sender passed to [TruesealSyncClient.publish].
  * Use [text] for clipboard payloads encoded as UTF-8.
  */
 data class ReceivedBlob(
@@ -53,11 +53,11 @@ data class SyncMember(
 /**
  * An incoming request from another device that wants to join the Sync Group.
  *
- * Obtained from [HushSyncClient.pairingRequests].
- * Pass to [HushSyncClient.acceptPairingRequest] to admit the device.
+ * Obtained from [TruesealSyncClient.pairingRequests].
+ * Pass to [TruesealSyncClient.acceptPairingRequest] to admit the device.
  */
 data class PairingRequest(
-    /** Opaque token — pass back to [HushSyncClient.acceptPairingRequest]. Never interpret. */
+    /** Opaque token — pass back to [TruesealSyncClient.acceptPairingRequest]. Never interpret. */
     val token: String,
     /** Auto-generated name for the requesting device. */
     val deviceName: String,
@@ -68,7 +68,7 @@ data class PairingRequest(
 /**
  * Lifecycle events for Sync Group membership.
  *
- * Delivered via [HushSyncClient.memberEvents].
+ * Delivered via [TruesealSyncClient.memberEvents].
  */
 sealed class MemberEvent {
     /** A new device was admitted to the Sync Group. */
@@ -85,7 +85,7 @@ sealed class MemberEvent {
 
     /**
      * Any member triggered Destroy Group. Session is now terminal.
-     * Reconstruct [HushSyncClient] with the same namespace to start fresh.
+     * Reconstruct [TruesealSyncClient] with the same namespace to start fresh.
      */
     object GroupDestroyed : MemberEvent()
 }
@@ -95,8 +95,8 @@ sealed class MemberEvent {
 /**
  * Informational relay connection state.
  *
- * Delivered via [HushSyncClient.connectionState].
+ * Delivered via [TruesealSyncClient.connectionState].
  * The library queues outbox messages and reconnects automatically —
- * use for UI indicators only, never gate on this before calling [HushSyncClient.publish].
+ * use for UI indicators only, never gate on this before calling [TruesealSyncClient.publish].
  */
 enum class ConnectionState { Connected, Disconnected }

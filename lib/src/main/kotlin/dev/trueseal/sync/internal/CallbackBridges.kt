@@ -1,13 +1,13 @@
-package dev.hush.sync.internal
+package dev.trueseal.sync.internal
 
-import dev.hush.sync.*
+import dev.trueseal.sync.*
 import kotlinx.coroutines.channels.SendChannel
-import uniffi.hush_sync.*
+import uniffi.trueseal_sync.*
 
 // Internal callback bridge objects.
 //
 // Each class implements one of the UniFFI callback interfaces and forwards events
-// into a Kotlin Channel that backs the public Flow exposed by HushSyncClient.
+// into a Kotlin Channel that backs the public Flow exposed by TruesealSyncClient.
 // None of these types are public — they live entirely behind the package boundary.
 
 // ── Blob ─────────────────────────────────────────────────────────────────────

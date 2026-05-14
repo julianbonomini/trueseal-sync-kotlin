@@ -14,5 +14,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "hush-sync-kotlin"
+rootProject.name = "trueseal-sync-kotlin"
 include(":lib")

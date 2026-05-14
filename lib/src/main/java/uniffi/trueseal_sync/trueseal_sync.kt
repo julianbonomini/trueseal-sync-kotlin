@@ -3,7 +3,7 @@
 
 @file:Suppress("NAME_SHADOWING")
 
-package uniffi.hush_sync
+package uniffi.trueseal_sync
 
 // Common helper code.
 //
@@ -59,7 +59,7 @@ open class RustBuffer : Structure() {
     companion object {
         internal fun alloc(size: ULong = 0UL) = uniffiRustCall() { status ->
             // Note: need to convert the size to a `Long` value to make this work with JVM.
-            UniffiLib.INSTANCE.ffi_hush_sync_rustbuffer_alloc(size.toLong(), status)
+            UniffiLib.INSTANCE.ffi_trueseal_sync_rustbuffer_alloc(size.toLong(), status)
         }.also {
             if(it.data == null) {
                throw RuntimeException("RustBuffer.alloc() returned null data pointer (size=${size})")
@@ -75,7 +75,7 @@ open class RustBuffer : Structure() {
         }
 
         internal fun free(buf: RustBuffer.ByValue) = uniffiRustCall() { status ->
-            UniffiLib.INSTANCE.ffi_hush_sync_rustbuffer_free(buf, status)
+            UniffiLib.INSTANCE.ffi_trueseal_sync_rustbuffer_free(buf, status)
         }
     }
 
@@ -375,7 +375,7 @@ private fun findLibraryName(componentName: String): String {
     if (libOverride != null) {
         return libOverride
     }
-    return "hush_sync"
+    return "trueseal_sync"
 }
 
 private inline fun <reified Lib : Library> loadIndirect(
@@ -895,7 +895,7 @@ internal open class UniffiVTableCallbackInterfaceRemovedFromGroupCallback(
 internal interface UniffiLib : Library {
     companion object {
         internal val INSTANCE: UniffiLib by lazy {
-            loadIndirect<UniffiLib>(componentName = "hush_sync")
+            loadIndirect<UniffiLib>(componentName = "trueseal_sync")
             .also { lib: UniffiLib ->
                 uniffiCheckContractApiVersion(lib)
                 uniffiCheckApiChecksums(lib)
@@ -915,207 +915,207 @@ internal interface UniffiLib : Library {
         }
     }
 
-    fun uniffi_hush_sync_fn_clone_hushffisession(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_trueseal_sync_fn_clone_truesealffisession(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus, 
     ): Pointer
-    fun uniffi_hush_sync_fn_free_hushffisession(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_trueseal_sync_fn_free_truesealffisession(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
-    fun uniffi_hush_sync_fn_constructor_hushffisession_create(`baseDir`: RustBuffer.ByValue,`namespace`: RustBuffer.ByValue,`relayHost`: RustBuffer.ByValue,`relayPub`: RustBuffer.ByValue,`onMessage`: Long,`onRemovedFromGroup`: Long,`onGroupDestroyed`: Long,`onConnectionChanged`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_trueseal_sync_fn_constructor_truesealffisession_create(`baseDir`: RustBuffer.ByValue,`namespace`: RustBuffer.ByValue,`relayHost`: RustBuffer.ByValue,`relayPub`: RustBuffer.ByValue,`onMessage`: Long,`onRemovedFromGroup`: Long,`onGroupDestroyed`: Long,`onConnectionChanged`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Pointer
-    fun uniffi_hush_sync_fn_method_hushffisession_accept_member(`ptr`: Pointer,`token`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_trueseal_sync_fn_method_truesealffisession_accept_member(`ptr`: Pointer,`token`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Byte
-    fun uniffi_hush_sync_fn_method_hushffisession_cancel_pairing(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_trueseal_sync_fn_method_truesealffisession_cancel_pairing(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
-    fun uniffi_hush_sync_fn_method_hushffisession_destroy_group(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_trueseal_sync_fn_method_truesealffisession_destroy_group(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
-    fun uniffi_hush_sync_fn_method_hushffisession_join_group(`ptr`: Pointer,`token`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_trueseal_sync_fn_method_truesealffisession_join_group(`ptr`: Pointer,`token`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
-    fun uniffi_hush_sync_fn_method_hushffisession_local_device_name(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_trueseal_sync_fn_method_truesealffisession_local_device_name(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
-    fun uniffi_hush_sync_fn_method_hushffisession_local_node_id(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_trueseal_sync_fn_method_truesealffisession_local_node_id(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
-    fun uniffi_hush_sync_fn_method_hushffisession_members(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_trueseal_sync_fn_method_truesealffisession_members(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
-    fun uniffi_hush_sync_fn_method_hushffisession_pairing_token(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_trueseal_sync_fn_method_truesealffisession_pairing_token(`ptr`: Pointer,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
-    fun uniffi_hush_sync_fn_method_hushffisession_remove_member(`ptr`: Pointer,`memberId`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_trueseal_sync_fn_method_truesealffisession_remove_member(`ptr`: Pointer,`memberId`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
-    fun uniffi_hush_sync_fn_method_hushffisession_send(`ptr`: Pointer,`blob`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_trueseal_sync_fn_method_truesealffisession_send(`ptr`: Pointer,`blob`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
-    fun uniffi_hush_sync_fn_method_hushffisession_set_on_member_joined(`ptr`: Pointer,`callback`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_trueseal_sync_fn_method_truesealffisession_set_on_member_joined(`ptr`: Pointer,`callback`: Long,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
-    fun uniffi_hush_sync_fn_method_hushffisession_set_on_member_left(`ptr`: Pointer,`callback`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_trueseal_sync_fn_method_truesealffisession_set_on_member_left(`ptr`: Pointer,`callback`: Long,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
-    fun uniffi_hush_sync_fn_method_hushffisession_set_on_member_request(`ptr`: Pointer,`callback`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    fun uniffi_trueseal_sync_fn_method_truesealffisession_set_on_member_request(`ptr`: Pointer,`callback`: Long,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
-    fun uniffi_hush_sync_fn_init_callback_vtable_connectionchangedcallback(`vtable`: UniffiVTableCallbackInterfaceConnectionChangedCallback,
+    fun uniffi_trueseal_sync_fn_init_callback_vtable_connectionchangedcallback(`vtable`: UniffiVTableCallbackInterfaceConnectionChangedCallback,
     ): Unit
-    fun uniffi_hush_sync_fn_init_callback_vtable_groupdestroyedcallback(`vtable`: UniffiVTableCallbackInterfaceGroupDestroyedCallback,
+    fun uniffi_trueseal_sync_fn_init_callback_vtable_groupdestroyedcallback(`vtable`: UniffiVTableCallbackInterfaceGroupDestroyedCallback,
     ): Unit
-    fun uniffi_hush_sync_fn_init_callback_vtable_memberjoinedcallback(`vtable`: UniffiVTableCallbackInterfaceMemberJoinedCallback,
+    fun uniffi_trueseal_sync_fn_init_callback_vtable_memberjoinedcallback(`vtable`: UniffiVTableCallbackInterfaceMemberJoinedCallback,
     ): Unit
-    fun uniffi_hush_sync_fn_init_callback_vtable_memberleftcallback(`vtable`: UniffiVTableCallbackInterfaceMemberLeftCallback,
+    fun uniffi_trueseal_sync_fn_init_callback_vtable_memberleftcallback(`vtable`: UniffiVTableCallbackInterfaceMemberLeftCallback,
     ): Unit
-    fun uniffi_hush_sync_fn_init_callback_vtable_memberrequestcallback(`vtable`: UniffiVTableCallbackInterfaceMemberRequestCallback,
+    fun uniffi_trueseal_sync_fn_init_callback_vtable_memberrequestcallback(`vtable`: UniffiVTableCallbackInterfaceMemberRequestCallback,
     ): Unit
-    fun uniffi_hush_sync_fn_init_callback_vtable_messagecallback(`vtable`: UniffiVTableCallbackInterfaceMessageCallback,
+    fun uniffi_trueseal_sync_fn_init_callback_vtable_messagecallback(`vtable`: UniffiVTableCallbackInterfaceMessageCallback,
     ): Unit
-    fun uniffi_hush_sync_fn_init_callback_vtable_removedfromgroupcallback(`vtable`: UniffiVTableCallbackInterfaceRemovedFromGroupCallback,
+    fun uniffi_trueseal_sync_fn_init_callback_vtable_removedfromgroupcallback(`vtable`: UniffiVTableCallbackInterfaceRemovedFromGroupCallback,
     ): Unit
-    fun ffi_hush_sync_rustbuffer_alloc(`size`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    fun ffi_trueseal_sync_rustbuffer_alloc(`size`: Long,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
-    fun ffi_hush_sync_rustbuffer_from_bytes(`bytes`: ForeignBytes.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    fun ffi_trueseal_sync_rustbuffer_from_bytes(`bytes`: ForeignBytes.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
-    fun ffi_hush_sync_rustbuffer_free(`buf`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    fun ffi_trueseal_sync_rustbuffer_free(`buf`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
-    fun ffi_hush_sync_rustbuffer_reserve(`buf`: RustBuffer.ByValue,`additional`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    fun ffi_trueseal_sync_rustbuffer_reserve(`buf`: RustBuffer.ByValue,`additional`: Long,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
-    fun ffi_hush_sync_rust_future_poll_u8(`handle`: Long,`callback`: UniffiRustFutureContinuationCallback,`callbackData`: Long,
+    fun ffi_trueseal_sync_rust_future_poll_u8(`handle`: Long,`callback`: UniffiRustFutureContinuationCallback,`callbackData`: Long,
     ): Unit
-    fun ffi_hush_sync_rust_future_cancel_u8(`handle`: Long,
+    fun ffi_trueseal_sync_rust_future_cancel_u8(`handle`: Long,
     ): Unit
-    fun ffi_hush_sync_rust_future_free_u8(`handle`: Long,
+    fun ffi_trueseal_sync_rust_future_free_u8(`handle`: Long,
     ): Unit
-    fun ffi_hush_sync_rust_future_complete_u8(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    fun ffi_trueseal_sync_rust_future_complete_u8(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
     ): Byte
-    fun ffi_hush_sync_rust_future_poll_i8(`handle`: Long,`callback`: UniffiRustFutureContinuationCallback,`callbackData`: Long,
+    fun ffi_trueseal_sync_rust_future_poll_i8(`handle`: Long,`callback`: UniffiRustFutureContinuationCallback,`callbackData`: Long,
     ): Unit
-    fun ffi_hush_sync_rust_future_cancel_i8(`handle`: Long,
+    fun ffi_trueseal_sync_rust_future_cancel_i8(`handle`: Long,
     ): Unit
-    fun ffi_hush_sync_rust_future_free_i8(`handle`: Long,
+    fun ffi_trueseal_sync_rust_future_free_i8(`handle`: Long,
     ): Unit
-    fun ffi_hush_sync_rust_future_complete_i8(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    fun ffi_trueseal_sync_rust_future_complete_i8(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
     ): Byte
-    fun ffi_hush_sync_rust_future_poll_u16(`handle`: Long,`callback`: UniffiRustFutureContinuationCallback,`callbackData`: Long,
+    fun ffi_trueseal_sync_rust_future_poll_u16(`handle`: Long,`callback`: UniffiRustFutureContinuationCallback,`callbackData`: Long,
     ): Unit
-    fun ffi_hush_sync_rust_future_cancel_u16(`handle`: Long,
+    fun ffi_trueseal_sync_rust_future_cancel_u16(`handle`: Long,
     ): Unit
-    fun ffi_hush_sync_rust_future_free_u16(`handle`: Long,
+    fun ffi_trueseal_sync_rust_future_free_u16(`handle`: Long,
     ): Unit
-    fun ffi_hush_sync_rust_future_complete_u16(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    fun ffi_trueseal_sync_rust_future_complete_u16(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
     ): Short
-    fun ffi_hush_sync_rust_future_poll_i16(`handle`: Long,`callback`: UniffiRustFutureContinuationCallback,`callbackData`: Long,
+    fun ffi_trueseal_sync_rust_future_poll_i16(`handle`: Long,`callback`: UniffiRustFutureContinuationCallback,`callbackData`: Long,
     ): Unit
-    fun ffi_hush_sync_rust_future_cancel_i16(`handle`: Long,
+    fun ffi_trueseal_sync_rust_future_cancel_i16(`handle`: Long,
     ): Unit
-    fun ffi_hush_sync_rust_future_free_i16(`handle`: Long,
+    fun ffi_trueseal_sync_rust_future_free_i16(`handle`: Long,
     ): Unit
-    fun ffi_hush_sync_rust_future_complete_i16(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    fun ffi_trueseal_sync_rust_future_complete_i16(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
     ): Short
-    fun ffi_hush_sync_rust_future_poll_u32(`handle`: Long,`callback`: UniffiRustFutureContinuationCallback,`callbackData`: Long,
+    fun ffi_trueseal_sync_rust_future_poll_u32(`handle`: Long,`callback`: UniffiRustFutureContinuationCallback,`callbackData`: Long,
     ): Unit
-    fun ffi_hush_sync_rust_future_cancel_u32(`handle`: Long,
+    fun ffi_trueseal_sync_rust_future_cancel_u32(`handle`: Long,
     ): Unit
-    fun ffi_hush_sync_rust_future_free_u32(`handle`: Long,
+    fun ffi_trueseal_sync_rust_future_free_u32(`handle`: Long,
     ): Unit
-    fun ffi_hush_sync_rust_future_complete_u32(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    fun ffi_trueseal_sync_rust_future_complete_u32(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
     ): Int
-    fun ffi_hush_sync_rust_future_poll_i32(`handle`: Long,`callback`: UniffiRustFutureContinuationCallback,`callbackData`: Long,
+    fun ffi_trueseal_sync_rust_future_poll_i32(`handle`: Long,`callback`: UniffiRustFutureContinuationCallback,`callbackData`: Long,
     ): Unit
-    fun ffi_hush_sync_rust_future_cancel_i32(`handle`: Long,
+    fun ffi_trueseal_sync_rust_future_cancel_i32(`handle`: Long,
     ): Unit
-    fun ffi_hush_sync_rust_future_free_i32(`handle`: Long,
+    fun ffi_trueseal_sync_rust_future_free_i32(`handle`: Long,
     ): Unit
-    fun ffi_hush_sync_rust_future_complete_i32(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    fun ffi_trueseal_sync_rust_future_complete_i32(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
     ): Int
-    fun ffi_hush_sync_rust_future_poll_u64(`handle`: Long,`callback`: UniffiRustFutureContinuationCallback,`callbackData`: Long,
+    fun ffi_trueseal_sync_rust_future_poll_u64(`handle`: Long,`callback`: UniffiRustFutureContinuationCallback,`callbackData`: Long,
     ): Unit
-    fun ffi_hush_sync_rust_future_cancel_u64(`handle`: Long,
+    fun ffi_trueseal_sync_rust_future_cancel_u64(`handle`: Long,
     ): Unit
-    fun ffi_hush_sync_rust_future_free_u64(`handle`: Long,
+    fun ffi_trueseal_sync_rust_future_free_u64(`handle`: Long,
     ): Unit
-    fun ffi_hush_sync_rust_future_complete_u64(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    fun ffi_trueseal_sync_rust_future_complete_u64(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
     ): Long
-    fun ffi_hush_sync_rust_future_poll_i64(`handle`: Long,`callback`: UniffiRustFutureContinuationCallback,`callbackData`: Long,
+    fun ffi_trueseal_sync_rust_future_poll_i64(`handle`: Long,`callback`: UniffiRustFutureContinuationCallback,`callbackData`: Long,
     ): Unit
-    fun ffi_hush_sync_rust_future_cancel_i64(`handle`: Long,
+    fun ffi_trueseal_sync_rust_future_cancel_i64(`handle`: Long,
     ): Unit
-    fun ffi_hush_sync_rust_future_free_i64(`handle`: Long,
+    fun ffi_trueseal_sync_rust_future_free_i64(`handle`: Long,
     ): Unit
-    fun ffi_hush_sync_rust_future_complete_i64(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    fun ffi_trueseal_sync_rust_future_complete_i64(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
     ): Long
-    fun ffi_hush_sync_rust_future_poll_f32(`handle`: Long,`callback`: UniffiRustFutureContinuationCallback,`callbackData`: Long,
+    fun ffi_trueseal_sync_rust_future_poll_f32(`handle`: Long,`callback`: UniffiRustFutureContinuationCallback,`callbackData`: Long,
     ): Unit
-    fun ffi_hush_sync_rust_future_cancel_f32(`handle`: Long,
+    fun ffi_trueseal_sync_rust_future_cancel_f32(`handle`: Long,
     ): Unit
-    fun ffi_hush_sync_rust_future_free_f32(`handle`: Long,
+    fun ffi_trueseal_sync_rust_future_free_f32(`handle`: Long,
     ): Unit
-    fun ffi_hush_sync_rust_future_complete_f32(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    fun ffi_trueseal_sync_rust_future_complete_f32(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
     ): Float
-    fun ffi_hush_sync_rust_future_poll_f64(`handle`: Long,`callback`: UniffiRustFutureContinuationCallback,`callbackData`: Long,
+    fun ffi_trueseal_sync_rust_future_poll_f64(`handle`: Long,`callback`: UniffiRustFutureContinuationCallback,`callbackData`: Long,
     ): Unit
-    fun ffi_hush_sync_rust_future_cancel_f64(`handle`: Long,
+    fun ffi_trueseal_sync_rust_future_cancel_f64(`handle`: Long,
     ): Unit
-    fun ffi_hush_sync_rust_future_free_f64(`handle`: Long,
+    fun ffi_trueseal_sync_rust_future_free_f64(`handle`: Long,
     ): Unit
-    fun ffi_hush_sync_rust_future_complete_f64(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    fun ffi_trueseal_sync_rust_future_complete_f64(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
     ): Double
-    fun ffi_hush_sync_rust_future_poll_pointer(`handle`: Long,`callback`: UniffiRustFutureContinuationCallback,`callbackData`: Long,
+    fun ffi_trueseal_sync_rust_future_poll_pointer(`handle`: Long,`callback`: UniffiRustFutureContinuationCallback,`callbackData`: Long,
     ): Unit
-    fun ffi_hush_sync_rust_future_cancel_pointer(`handle`: Long,
+    fun ffi_trueseal_sync_rust_future_cancel_pointer(`handle`: Long,
     ): Unit
-    fun ffi_hush_sync_rust_future_free_pointer(`handle`: Long,
+    fun ffi_trueseal_sync_rust_future_free_pointer(`handle`: Long,
     ): Unit
-    fun ffi_hush_sync_rust_future_complete_pointer(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    fun ffi_trueseal_sync_rust_future_complete_pointer(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
     ): Pointer
-    fun ffi_hush_sync_rust_future_poll_rust_buffer(`handle`: Long,`callback`: UniffiRustFutureContinuationCallback,`callbackData`: Long,
+    fun ffi_trueseal_sync_rust_future_poll_rust_buffer(`handle`: Long,`callback`: UniffiRustFutureContinuationCallback,`callbackData`: Long,
     ): Unit
-    fun ffi_hush_sync_rust_future_cancel_rust_buffer(`handle`: Long,
+    fun ffi_trueseal_sync_rust_future_cancel_rust_buffer(`handle`: Long,
     ): Unit
-    fun ffi_hush_sync_rust_future_free_rust_buffer(`handle`: Long,
+    fun ffi_trueseal_sync_rust_future_free_rust_buffer(`handle`: Long,
     ): Unit
-    fun ffi_hush_sync_rust_future_complete_rust_buffer(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    fun ffi_trueseal_sync_rust_future_complete_rust_buffer(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
-    fun ffi_hush_sync_rust_future_poll_void(`handle`: Long,`callback`: UniffiRustFutureContinuationCallback,`callbackData`: Long,
+    fun ffi_trueseal_sync_rust_future_poll_void(`handle`: Long,`callback`: UniffiRustFutureContinuationCallback,`callbackData`: Long,
     ): Unit
-    fun ffi_hush_sync_rust_future_cancel_void(`handle`: Long,
+    fun ffi_trueseal_sync_rust_future_cancel_void(`handle`: Long,
     ): Unit
-    fun ffi_hush_sync_rust_future_free_void(`handle`: Long,
+    fun ffi_trueseal_sync_rust_future_free_void(`handle`: Long,
     ): Unit
-    fun ffi_hush_sync_rust_future_complete_void(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    fun ffi_trueseal_sync_rust_future_complete_void(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
-    fun uniffi_hush_sync_checksum_method_hushffisession_accept_member(
+    fun uniffi_trueseal_sync_checksum_method_truesealffisession_accept_member(
     ): Short
-    fun uniffi_hush_sync_checksum_method_hushffisession_cancel_pairing(
+    fun uniffi_trueseal_sync_checksum_method_truesealffisession_cancel_pairing(
     ): Short
-    fun uniffi_hush_sync_checksum_method_hushffisession_destroy_group(
+    fun uniffi_trueseal_sync_checksum_method_truesealffisession_destroy_group(
     ): Short
-    fun uniffi_hush_sync_checksum_method_hushffisession_join_group(
+    fun uniffi_trueseal_sync_checksum_method_truesealffisession_join_group(
     ): Short
-    fun uniffi_hush_sync_checksum_method_hushffisession_local_device_name(
+    fun uniffi_trueseal_sync_checksum_method_truesealffisession_local_device_name(
     ): Short
-    fun uniffi_hush_sync_checksum_method_hushffisession_local_node_id(
+    fun uniffi_trueseal_sync_checksum_method_truesealffisession_local_node_id(
     ): Short
-    fun uniffi_hush_sync_checksum_method_hushffisession_members(
+    fun uniffi_trueseal_sync_checksum_method_truesealffisession_members(
     ): Short
-    fun uniffi_hush_sync_checksum_method_hushffisession_pairing_token(
+    fun uniffi_trueseal_sync_checksum_method_truesealffisession_pairing_token(
     ): Short
-    fun uniffi_hush_sync_checksum_method_hushffisession_remove_member(
+    fun uniffi_trueseal_sync_checksum_method_truesealffisession_remove_member(
     ): Short
-    fun uniffi_hush_sync_checksum_method_hushffisession_send(
+    fun uniffi_trueseal_sync_checksum_method_truesealffisession_send(
     ): Short
-    fun uniffi_hush_sync_checksum_method_hushffisession_set_on_member_joined(
+    fun uniffi_trueseal_sync_checksum_method_truesealffisession_set_on_member_joined(
     ): Short
-    fun uniffi_hush_sync_checksum_method_hushffisession_set_on_member_left(
+    fun uniffi_trueseal_sync_checksum_method_truesealffisession_set_on_member_left(
     ): Short
-    fun uniffi_hush_sync_checksum_method_hushffisession_set_on_member_request(
+    fun uniffi_trueseal_sync_checksum_method_truesealffisession_set_on_member_request(
     ): Short
-    fun uniffi_hush_sync_checksum_constructor_hushffisession_create(
+    fun uniffi_trueseal_sync_checksum_constructor_truesealffisession_create(
     ): Short
-    fun uniffi_hush_sync_checksum_method_connectionchangedcallback_on_connection_changed(
+    fun uniffi_trueseal_sync_checksum_method_connectionchangedcallback_on_connection_changed(
     ): Short
-    fun uniffi_hush_sync_checksum_method_groupdestroyedcallback_on_group_destroyed(
+    fun uniffi_trueseal_sync_checksum_method_groupdestroyedcallback_on_group_destroyed(
     ): Short
-    fun uniffi_hush_sync_checksum_method_memberjoinedcallback_on_member_joined(
+    fun uniffi_trueseal_sync_checksum_method_memberjoinedcallback_on_member_joined(
     ): Short
-    fun uniffi_hush_sync_checksum_method_memberleftcallback_on_member_left(
+    fun uniffi_trueseal_sync_checksum_method_memberleftcallback_on_member_left(
     ): Short
-    fun uniffi_hush_sync_checksum_method_memberrequestcallback_on_member_request(
+    fun uniffi_trueseal_sync_checksum_method_memberrequestcallback_on_member_request(
     ): Short
-    fun uniffi_hush_sync_checksum_method_messagecallback_on_message(
+    fun uniffi_trueseal_sync_checksum_method_messagecallback_on_message(
     ): Short
-    fun uniffi_hush_sync_checksum_method_removedfromgroupcallback_on_removed_from_group(
+    fun uniffi_trueseal_sync_checksum_method_removedfromgroupcallback_on_removed_from_group(
     ): Short
-    fun ffi_hush_sync_uniffi_contract_version(
+    fun ffi_trueseal_sync_uniffi_contract_version(
     ): Int
     
 }
@@ -1124,7 +1124,7 @@ private fun uniffiCheckContractApiVersion(lib: UniffiLib) {
     // Get the bindings contract version from our ComponentInterface
     val bindings_contract_version = 26
     // Get the scaffolding contract version by calling the into the dylib
-    val scaffolding_contract_version = lib.ffi_hush_sync_uniffi_contract_version()
+    val scaffolding_contract_version = lib.ffi_trueseal_sync_uniffi_contract_version()
     if (bindings_contract_version != scaffolding_contract_version) {
         throw RuntimeException("UniFFI contract version mismatch: try cleaning and rebuilding your project")
     }
@@ -1132,67 +1132,67 @@ private fun uniffiCheckContractApiVersion(lib: UniffiLib) {
 
 @Suppress("UNUSED_PARAMETER")
 private fun uniffiCheckApiChecksums(lib: UniffiLib) {
-    if (lib.uniffi_hush_sync_checksum_method_hushffisession_accept_member() != 16777.toShort()) {
+    if (lib.uniffi_trueseal_sync_checksum_method_truesealffisession_accept_member() != 16777.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_hush_sync_checksum_method_hushffisession_cancel_pairing() != 53746.toShort()) {
+    if (lib.uniffi_trueseal_sync_checksum_method_truesealffisession_cancel_pairing() != 53746.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_hush_sync_checksum_method_hushffisession_destroy_group() != 1217.toShort()) {
+    if (lib.uniffi_trueseal_sync_checksum_method_truesealffisession_destroy_group() != 1217.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_hush_sync_checksum_method_hushffisession_join_group() != 37308.toShort()) {
+    if (lib.uniffi_trueseal_sync_checksum_method_truesealffisession_join_group() != 37308.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_hush_sync_checksum_method_hushffisession_local_device_name() != 59797.toShort()) {
+    if (lib.uniffi_trueseal_sync_checksum_method_truesealffisession_local_device_name() != 59797.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_hush_sync_checksum_method_hushffisession_local_node_id() != 1866.toShort()) {
+    if (lib.uniffi_trueseal_sync_checksum_method_truesealffisession_local_node_id() != 1866.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_hush_sync_checksum_method_hushffisession_members() != 20760.toShort()) {
+    if (lib.uniffi_trueseal_sync_checksum_method_truesealffisession_members() != 20760.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_hush_sync_checksum_method_hushffisession_pairing_token() != 21095.toShort()) {
+    if (lib.uniffi_trueseal_sync_checksum_method_truesealffisession_pairing_token() != 21095.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_hush_sync_checksum_method_hushffisession_remove_member() != 16018.toShort()) {
+    if (lib.uniffi_trueseal_sync_checksum_method_truesealffisession_remove_member() != 16018.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_hush_sync_checksum_method_hushffisession_send() != 20850.toShort()) {
+    if (lib.uniffi_trueseal_sync_checksum_method_truesealffisession_send() != 20850.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_hush_sync_checksum_method_hushffisession_set_on_member_joined() != 35932.toShort()) {
+    if (lib.uniffi_trueseal_sync_checksum_method_truesealffisession_set_on_member_joined() != 35932.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_hush_sync_checksum_method_hushffisession_set_on_member_left() != 50642.toShort()) {
+    if (lib.uniffi_trueseal_sync_checksum_method_truesealffisession_set_on_member_left() != 50642.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_hush_sync_checksum_method_hushffisession_set_on_member_request() != 52552.toShort()) {
+    if (lib.uniffi_trueseal_sync_checksum_method_truesealffisession_set_on_member_request() != 52552.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_hush_sync_checksum_constructor_hushffisession_create() != 32763.toShort()) {
+    if (lib.uniffi_trueseal_sync_checksum_constructor_truesealffisession_create() != 32763.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_hush_sync_checksum_method_connectionchangedcallback_on_connection_changed() != 31483.toShort()) {
+    if (lib.uniffi_trueseal_sync_checksum_method_connectionchangedcallback_on_connection_changed() != 31483.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_hush_sync_checksum_method_groupdestroyedcallback_on_group_destroyed() != 37987.toShort()) {
+    if (lib.uniffi_trueseal_sync_checksum_method_groupdestroyedcallback_on_group_destroyed() != 37987.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_hush_sync_checksum_method_memberjoinedcallback_on_member_joined() != 2593.toShort()) {
+    if (lib.uniffi_trueseal_sync_checksum_method_memberjoinedcallback_on_member_joined() != 2593.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_hush_sync_checksum_method_memberleftcallback_on_member_left() != 26292.toShort()) {
+    if (lib.uniffi_trueseal_sync_checksum_method_memberleftcallback_on_member_left() != 26292.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_hush_sync_checksum_method_memberrequestcallback_on_member_request() != 12851.toShort()) {
+    if (lib.uniffi_trueseal_sync_checksum_method_memberrequestcallback_on_member_request() != 12851.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_hush_sync_checksum_method_messagecallback_on_message() != 64032.toShort()) {
+    if (lib.uniffi_trueseal_sync_checksum_method_messagecallback_on_message() != 64032.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_hush_sync_checksum_method_removedfromgroupcallback_on_removed_from_group() != 29262.toShort()) {
+    if (lib.uniffi_trueseal_sync_checksum_method_removedfromgroupcallback_on_removed_from_group() != 29262.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
 }
@@ -1527,11 +1527,11 @@ private class JavaLangRefCleanable(
     override fun clean() = cleanable.clean()
 }
 /**
- * A connected hush-sync session over TCP.
+ * A connected trueseal-sync session over TCP.
  *
- * Create via `HushFfiSession.create(...)`.  All key arguments are raw bytes.
+ * Create via `TruesealFfiSession.create(...)`.  All key arguments are raw bytes.
  */
-public interface HushFfiSessionInterface {
+public interface TruesealFfiSessionInterface {
     
     /**
      * Admit a pending member identified by their opaque `token` from `onMemberRequest`.
@@ -1636,11 +1636,11 @@ public interface HushFfiSessionInterface {
 }
 
 /**
- * A connected hush-sync session over TCP.
+ * A connected trueseal-sync session over TCP.
  *
- * Create via `HushFfiSession.create(...)`.  All key arguments are raw bytes.
+ * Create via `TruesealFfiSession.create(...)`.  All key arguments are raw bytes.
  */
-open class HushFfiSession: Disposable, AutoCloseable, HushFfiSessionInterface {
+open class TruesealFfiSession: Disposable, AutoCloseable, TruesealFfiSessionInterface {
 
     constructor(pointer: Pointer) {
         this.pointer = pointer
@@ -1709,7 +1709,7 @@ open class HushFfiSession: Disposable, AutoCloseable, HushFfiSessionInterface {
         override fun run() {
             pointer?.let { ptr ->
                 uniffiRustCall { status ->
-                    UniffiLib.INSTANCE.uniffi_hush_sync_fn_free_hushffisession(ptr, status)
+                    UniffiLib.INSTANCE.uniffi_trueseal_sync_fn_free_truesealffisession(ptr, status)
                 }
             }
         }
@@ -1717,7 +1717,7 @@ open class HushFfiSession: Disposable, AutoCloseable, HushFfiSessionInterface {
 
     fun uniffiClonePointer(): Pointer {
         return uniffiRustCall() { status ->
-            UniffiLib.INSTANCE.uniffi_hush_sync_fn_clone_hushffisession(pointer!!, status)
+            UniffiLib.INSTANCE.uniffi_trueseal_sync_fn_clone_truesealffisession(pointer!!, status)
         }
     }
 
@@ -1730,7 +1730,7 @@ open class HushFfiSession: Disposable, AutoCloseable, HushFfiSessionInterface {
             return FfiConverterBoolean.lift(
     callWithPointer {
     uniffiRustCall() { _status ->
-    UniffiLib.INSTANCE.uniffi_hush_sync_fn_method_hushffisession_accept_member(
+    UniffiLib.INSTANCE.uniffi_trueseal_sync_fn_method_truesealffisession_accept_member(
         it, FfiConverterString.lower(`token`),_status)
 }
     }
@@ -1745,7 +1745,7 @@ open class HushFfiSession: Disposable, AutoCloseable, HushFfiSessionInterface {
         = 
     callWithPointer {
     uniffiRustCall() { _status ->
-    UniffiLib.INSTANCE.uniffi_hush_sync_fn_method_hushffisession_cancel_pairing(
+    UniffiLib.INSTANCE.uniffi_trueseal_sync_fn_method_truesealffisession_cancel_pairing(
         it, _status)
 }
     }
@@ -1760,7 +1760,7 @@ open class HushFfiSession: Disposable, AutoCloseable, HushFfiSessionInterface {
         = 
     callWithPointer {
     uniffiRustCall() { _status ->
-    UniffiLib.INSTANCE.uniffi_hush_sync_fn_method_hushffisession_destroy_group(
+    UniffiLib.INSTANCE.uniffi_trueseal_sync_fn_method_truesealffisession_destroy_group(
         it, _status)
 }
     }
@@ -1777,7 +1777,7 @@ open class HushFfiSession: Disposable, AutoCloseable, HushFfiSessionInterface {
         = 
     callWithPointer {
     uniffiRustCallWithError(SessionException) { _status ->
-    UniffiLib.INSTANCE.uniffi_hush_sync_fn_method_hushffisession_join_group(
+    UniffiLib.INSTANCE.uniffi_trueseal_sync_fn_method_truesealffisession_join_group(
         it, FfiConverterString.lower(`token`),_status)
 }
     }
@@ -1793,7 +1793,7 @@ open class HushFfiSession: Disposable, AutoCloseable, HushFfiSessionInterface {
             return FfiConverterString.lift(
     callWithPointer {
     uniffiRustCall() { _status ->
-    UniffiLib.INSTANCE.uniffi_hush_sync_fn_method_hushffisession_local_device_name(
+    UniffiLib.INSTANCE.uniffi_trueseal_sync_fn_method_truesealffisession_local_device_name(
         it, _status)
 }
     }
@@ -1810,7 +1810,7 @@ open class HushFfiSession: Disposable, AutoCloseable, HushFfiSessionInterface {
             return FfiConverterString.lift(
     callWithPointer {
     uniffiRustCall() { _status ->
-    UniffiLib.INSTANCE.uniffi_hush_sync_fn_method_hushffisession_local_node_id(
+    UniffiLib.INSTANCE.uniffi_trueseal_sync_fn_method_truesealffisession_local_node_id(
         it, _status)
 }
     }
@@ -1828,7 +1828,7 @@ open class HushFfiSession: Disposable, AutoCloseable, HushFfiSessionInterface {
             return FfiConverterSequenceTypeMember.lift(
     callWithPointer {
     uniffiRustCall() { _status ->
-    UniffiLib.INSTANCE.uniffi_hush_sync_fn_method_hushffisession_members(
+    UniffiLib.INSTANCE.uniffi_trueseal_sync_fn_method_truesealffisession_members(
         it, _status)
 }
     }
@@ -1849,7 +1849,7 @@ open class HushFfiSession: Disposable, AutoCloseable, HushFfiSessionInterface {
             return FfiConverterString.lift(
     callWithPointer {
     uniffiRustCall() { _status ->
-    UniffiLib.INSTANCE.uniffi_hush_sync_fn_method_hushffisession_pairing_token(
+    UniffiLib.INSTANCE.uniffi_trueseal_sync_fn_method_truesealffisession_pairing_token(
         it, _status)
 }
     }
@@ -1872,7 +1872,7 @@ open class HushFfiSession: Disposable, AutoCloseable, HushFfiSessionInterface {
         = 
     callWithPointer {
     uniffiRustCallWithError(SessionException) { _status ->
-    UniffiLib.INSTANCE.uniffi_hush_sync_fn_method_hushffisession_remove_member(
+    UniffiLib.INSTANCE.uniffi_trueseal_sync_fn_method_truesealffisession_remove_member(
         it, FfiConverterString.lower(`memberId`),_status)
 }
     }
@@ -1888,7 +1888,7 @@ open class HushFfiSession: Disposable, AutoCloseable, HushFfiSessionInterface {
         = 
     callWithPointer {
     uniffiRustCallWithError(SessionException) { _status ->
-    UniffiLib.INSTANCE.uniffi_hush_sync_fn_method_hushffisession_send(
+    UniffiLib.INSTANCE.uniffi_trueseal_sync_fn_method_truesealffisession_send(
         it, FfiConverterByteArray.lower(`blob`),_status)
 }
     }
@@ -1905,7 +1905,7 @@ open class HushFfiSession: Disposable, AutoCloseable, HushFfiSessionInterface {
         = 
     callWithPointer {
     uniffiRustCall() { _status ->
-    UniffiLib.INSTANCE.uniffi_hush_sync_fn_method_hushffisession_set_on_member_joined(
+    UniffiLib.INSTANCE.uniffi_trueseal_sync_fn_method_truesealffisession_set_on_member_joined(
         it, FfiConverterTypeMemberJoinedCallback.lower(`callback`),_status)
 }
     }
@@ -1921,7 +1921,7 @@ open class HushFfiSession: Disposable, AutoCloseable, HushFfiSessionInterface {
         = 
     callWithPointer {
     uniffiRustCall() { _status ->
-    UniffiLib.INSTANCE.uniffi_hush_sync_fn_method_hushffisession_set_on_member_left(
+    UniffiLib.INSTANCE.uniffi_trueseal_sync_fn_method_truesealffisession_set_on_member_left(
         it, FfiConverterTypeMemberLeftCallback.lower(`callback`),_status)
 }
     }
@@ -1938,7 +1938,7 @@ open class HushFfiSession: Disposable, AutoCloseable, HushFfiSessionInterface {
         = 
     callWithPointer {
     uniffiRustCall() { _status ->
-    UniffiLib.INSTANCE.uniffi_hush_sync_fn_method_hushffisession_set_on_member_request(
+    UniffiLib.INSTANCE.uniffi_trueseal_sync_fn_method_truesealffisession_set_on_member_request(
         it, FfiConverterTypeMemberRequestCallback.lower(`callback`),_status)
 }
     }
@@ -1963,10 +1963,10 @@ open class HushFfiSession: Disposable, AutoCloseable, HushFfiSessionInterface {
      * Automatically reconnects on relay disconnects using an exponential backoff
      * capped at 30 seconds.
      */
-    @Throws(SessionException::class) fun `create`(`baseDir`: kotlin.String, `namespace`: kotlin.String, `relayHost`: kotlin.String, `relayPub`: kotlin.ByteArray, `onMessage`: MessageCallback, `onRemovedFromGroup`: RemovedFromGroupCallback, `onGroupDestroyed`: GroupDestroyedCallback, `onConnectionChanged`: ConnectionChangedCallback?): HushFfiSession {
-            return FfiConverterTypeHushFfiSession.lift(
+    @Throws(SessionException::class) fun `create`(`baseDir`: kotlin.String, `namespace`: kotlin.String, `relayHost`: kotlin.String, `relayPub`: kotlin.ByteArray, `onMessage`: MessageCallback, `onRemovedFromGroup`: RemovedFromGroupCallback, `onGroupDestroyed`: GroupDestroyedCallback, `onConnectionChanged`: ConnectionChangedCallback?): TruesealFfiSession {
+            return FfiConverterTypeTruesealFfiSession.lift(
     uniffiRustCallWithError(SessionException) { _status ->
-    UniffiLib.INSTANCE.uniffi_hush_sync_fn_constructor_hushffisession_create(
+    UniffiLib.INSTANCE.uniffi_trueseal_sync_fn_constructor_truesealffisession_create(
         FfiConverterString.lower(`baseDir`),FfiConverterString.lower(`namespace`),FfiConverterString.lower(`relayHost`),FfiConverterByteArray.lower(`relayPub`),FfiConverterTypeMessageCallback.lower(`onMessage`),FfiConverterTypeRemovedFromGroupCallback.lower(`onRemovedFromGroup`),FfiConverterTypeGroupDestroyedCallback.lower(`onGroupDestroyed`),FfiConverterOptionalTypeConnectionChangedCallback.lower(`onConnectionChanged`),_status)
 }
     )
@@ -1981,25 +1981,25 @@ open class HushFfiSession: Disposable, AutoCloseable, HushFfiSessionInterface {
 /**
  * @suppress
  */
-public object FfiConverterTypeHushFfiSession: FfiConverter<HushFfiSession, Pointer> {
+public object FfiConverterTypeTruesealFfiSession: FfiConverter<TruesealFfiSession, Pointer> {
 
-    override fun lower(value: HushFfiSession): Pointer {
+    override fun lower(value: TruesealFfiSession): Pointer {
         return value.uniffiClonePointer()
     }
 
-    override fun lift(value: Pointer): HushFfiSession {
-        return HushFfiSession(value)
+    override fun lift(value: Pointer): TruesealFfiSession {
+        return TruesealFfiSession(value)
     }
 
-    override fun read(buf: ByteBuffer): HushFfiSession {
+    override fun read(buf: ByteBuffer): TruesealFfiSession {
         // The Rust code always writes pointers as 8 bytes, and will
         // fail to compile if they don't fit.
         return lift(Pointer(buf.getLong()))
     }
 
-    override fun allocationSize(value: HushFfiSession) = 8UL
+    override fun allocationSize(value: TruesealFfiSession) = 8UL
 
-    override fun write(value: HushFfiSession, buf: ByteBuffer) {
+    override fun write(value: TruesealFfiSession, buf: ByteBuffer) {
         // The Rust code always expects pointers written as 8 bytes,
         // and will fail to compile if they don't fit.
         buf.putLong(Pointer.nativeValue(lower(value)))
@@ -2307,7 +2307,7 @@ internal object uniffiCallbackInterfaceConnectionChangedCallback {
     // Registers the foreign callback with the Rust side.
     // This method is generated for each callback interface.
     internal fun register(lib: UniffiLib) {
-        lib.uniffi_hush_sync_fn_init_callback_vtable_connectionchangedcallback(vtable)
+        lib.uniffi_trueseal_sync_fn_init_callback_vtable_connectionchangedcallback(vtable)
     }
 }
 
@@ -2363,7 +2363,7 @@ internal object uniffiCallbackInterfaceGroupDestroyedCallback {
     // Registers the foreign callback with the Rust side.
     // This method is generated for each callback interface.
     internal fun register(lib: UniffiLib) {
-        lib.uniffi_hush_sync_fn_init_callback_vtable_groupdestroyedcallback(vtable)
+        lib.uniffi_trueseal_sync_fn_init_callback_vtable_groupdestroyedcallback(vtable)
     }
 }
 
@@ -2420,7 +2420,7 @@ internal object uniffiCallbackInterfaceMemberJoinedCallback {
     // Registers the foreign callback with the Rust side.
     // This method is generated for each callback interface.
     internal fun register(lib: UniffiLib) {
-        lib.uniffi_hush_sync_fn_init_callback_vtable_memberjoinedcallback(vtable)
+        lib.uniffi_trueseal_sync_fn_init_callback_vtable_memberjoinedcallback(vtable)
     }
 }
 
@@ -2478,7 +2478,7 @@ internal object uniffiCallbackInterfaceMemberLeftCallback {
     // Registers the foreign callback with the Rust side.
     // This method is generated for each callback interface.
     internal fun register(lib: UniffiLib) {
-        lib.uniffi_hush_sync_fn_init_callback_vtable_memberleftcallback(vtable)
+        lib.uniffi_trueseal_sync_fn_init_callback_vtable_memberleftcallback(vtable)
     }
 }
 
@@ -2537,7 +2537,7 @@ internal object uniffiCallbackInterfaceMemberRequestCallback {
     // Registers the foreign callback with the Rust side.
     // This method is generated for each callback interface.
     internal fun register(lib: UniffiLib) {
-        lib.uniffi_hush_sync_fn_init_callback_vtable_memberrequestcallback(vtable)
+        lib.uniffi_trueseal_sync_fn_init_callback_vtable_memberrequestcallback(vtable)
     }
 }
 
@@ -2595,7 +2595,7 @@ internal object uniffiCallbackInterfaceMessageCallback {
     // Registers the foreign callback with the Rust side.
     // This method is generated for each callback interface.
     internal fun register(lib: UniffiLib) {
-        lib.uniffi_hush_sync_fn_init_callback_vtable_messagecallback(vtable)
+        lib.uniffi_trueseal_sync_fn_init_callback_vtable_messagecallback(vtable)
     }
 }
 
@@ -2652,7 +2652,7 @@ internal object uniffiCallbackInterfaceRemovedFromGroupCallback {
     // Registers the foreign callback with the Rust side.
     // This method is generated for each callback interface.
     internal fun register(lib: UniffiLib) {
-        lib.uniffi_hush_sync_fn_init_callback_vtable_removedfromgroupcallback(vtable)
+        lib.uniffi_trueseal_sync_fn_init_callback_vtable_removedfromgroupcallback(vtable)
     }
 }
 
