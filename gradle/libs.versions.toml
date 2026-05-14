@@ -8,7 +8,7 @@ junit          = "4.13.2"
 [libraries]
 kotlinx-coroutines-android = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-android", version.ref = "coroutines" }
 kotlinx-coroutines-core    = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-core",    version.ref = "coroutines" }
-jna-android                = { group = "net.java.dev.jna",       name = "jna",                        version.ref = "jna" }
+jna-android                = { group = "net.java.dev.jna",       name = "jna",                        version.ref = "jna", ext = "aar" }
 junit                      = { group = "junit",                  name = "junit",                      version.ref = "junit" }
 kotlinx-coroutines-test    = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-test",    version.ref = "coroutines" }
 

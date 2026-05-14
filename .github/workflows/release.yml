@@ -29,12 +29,14 @@ jobs:
         with:
           repository: buenomini/hush-sync
           path: hush-sync
+          token: ${{ secrets.PAT }}
 
       - name: Checkout hush-noise
         uses: actions/checkout@v4
         with:
           repository: buenomini/hush-noise
           path: hush-noise
+          token: ${{ secrets.PAT }}
 
       # ── Java / Android SDK ────────────────────────────────────────────────
 
