@@ -1,0 +1,3 @@
+# This directory is populated by scripts/build-android.sh
+# Run that script first, then commit the generated .so files here.
+# See README.md → "Regenerating bindings & native libs"

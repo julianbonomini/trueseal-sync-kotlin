@@ -1,0 +1,17 @@
+[versions]
+agp            = "8.3.2"
+kotlin         = "1.9.24"
+coroutines     = "1.8.1"
+jna            = "5.14.0"
+junit          = "4.13.2"
+
+[libraries]
+kotlinx-coroutines-android = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-android", version.ref = "coroutines" }
+kotlinx-coroutines-core    = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-core",    version.ref = "coroutines" }
+jna-android                = { group = "net.java.dev.jna",       name = "jna",                        version.ref = "jna" }
+junit                      = { group = "junit",                  name = "junit",                      version.ref = "junit" }
+kotlinx-coroutines-test    = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-test",    version.ref = "coroutines" }
+
+[plugins]
+android-library  = { id = "com.android.library",          version.ref = "agp"    }
+kotlin-android   = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
