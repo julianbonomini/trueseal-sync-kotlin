@@ -1,6 +1,6 @@
 name: Release AAR
 
-# Triggered by a version tag, e.g.: git tag v0.1.0 && git push origin v0.1.0
+# Triggered by a version tag, e.g.: git tag v0.4.1 && git push origin v0.4.1
 on:
   push:
     tags:
@@ -11,32 +11,51 @@ permissions:
 
 jobs:
   release:
+    name: Build & publish AAR
     runs-on: ubuntu-latest
 
     steps:
-      # ── Checkouts ─────────────────────────────────────────────────────────
-      # Repos must be siblings so the Cargo path deps (../trueseal-noise/rust)
-      # and the build script (../trueseal-sync) resolve correctly.
-
-      - name: Checkout trueseal-sync-kotlin
+      - name: Checkout
         uses: actions/checkout@v4
         with:
-          path: trueseal-sync-kotlin
+          # Full history + tags so we can move the tag after committing artifacts
+          fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Checkout trueseal-sync
-        uses: actions/checkout@v4
-        with:
-          repository: buenomini/trueseal-sync
-          path: trueseal-sync
-          token: ${{ secrets.PAT }}
+      # ── Fetch pre-built .so + Kotlin bindings from trueseal-sync release ──
 
-      - name: Checkout trueseal-noise
-        uses: actions/checkout@v4
-        with:
-          repository: buenomini/trueseal-noise
-          path: trueseal-noise
-          token: ${{ secrets.PAT }}
+      - name: Download trueseal-sync Android artifacts
+        env:
+          TRUESEAL_READ_TOKEN: ${{ secrets.TRUESEAL_READ_TOKEN }}
+        run: |
+          RELEASE_JSON=$(curl -sf \
+            -H "Authorization: token $TRUESEAL_READ_TOKEN" \
+            "https://api.github.com/repos/buenomini/trueseal-sync/releases/latest")
+
+          UPSTREAM_VERSION=$(echo "$RELEASE_JSON" | jq -r '.tag_name')
+          ASSET_URL=$(echo "$RELEASE_JSON" | jq -r \
+            '.assets[] | select(.name | startswith("trueseal-sync-android-")) | .url')
+
+          echo "Fetching upstream $UPSTREAM_VERSION → $ASSET_URL"
+          echo "UPSTREAM_VERSION=$UPSTREAM_VERSION" >> "$GITHUB_ENV"
+
+          curl -sf -L \
+            -H "Authorization: token $TRUESEAL_READ_TOKEN" \
+            -H "Accept: application/octet-stream" \
+            "$ASSET_URL" -o trueseal-sync-android.zip
+
+          unzip -q trueseal-sync-android.zip -d _artifacts
+
+          mkdir -p \
+            lib/src/main/jniLibs/arm64-v8a \
+            lib/src/main/jniLibs/x86_64 \
+            lib/src/main/java/uniffi/trueseal_sync \
+            lib/src/main/java/uniffi/trueseal_noise
+
+          cp _artifacts/jniLibs/arm64-v8a/libtrueseal_sync.so  lib/src/main/jniLibs/arm64-v8a/
+          cp _artifacts/jniLibs/x86_64/libtrueseal_sync.so     lib/src/main/jniLibs/x86_64/
+          cp _artifacts/kotlin/uniffi/trueseal_sync/trueseal_sync.kt   lib/src/main/java/uniffi/trueseal_sync/
+          cp _artifacts/kotlin/uniffi/trueseal_noise/trueseal_noise.kt lib/src/main/java/uniffi/trueseal_noise/
 
       # ── Java / Android SDK ────────────────────────────────────────────────
 
@@ -49,64 +68,53 @@ jobs:
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
 
-      - name: Install Android NDK
-        run: |
-          sdkmanager "ndk;26.3.11579264"
-          echo "ANDROID_NDK_HOME=$ANDROID_SDK_ROOT/ndk/26.3.11579264" >> "$GITHUB_ENV"
-
-      # ── Rust toolchain ────────────────────────────────────────────────────
-
-      - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@stable
-        with:
-          targets: aarch64-linux-android,x86_64-linux-android,aarch64-unknown-linux-gnu
-
-      - name: Install cargo-ndk
-        run: cargo install cargo-ndk --locked
-
-      - name: Cache Rust build artefacts
-        uses: Swatinem/rust-cache@v2
-        with:
-          workspaces: trueseal-sync -> target
-
-      # ── Build .so + generate Kotlin bindings ──────────────────────────────
-
-      - name: Build Android .so + generate bindings
-        working-directory: trueseal-sync-kotlin
-        env:
-          CARGO_TARGET_DIR: /tmp/trueseal-sync-android-build
-        run: bash scripts/build-android.sh
-
       # ── Assemble AAR ──────────────────────────────────────────────────────
 
-      - name: Set version from tag
+      - name: Set VERSION_NAME from tag
         run: echo "VERSION_NAME=${GITHUB_REF_NAME#v}" >> "$GITHUB_ENV"
 
       - name: Assemble release AAR
-        working-directory: trueseal-sync-kotlin
-        run: ./gradlew lib:assembleRelease -PVERSION_NAME="$VERSION_NAME"
+        run: ./gradlew :lib:assembleRelease -PVERSION_NAME="$VERSION_NAME"
 
-      # ── Commit generated artefacts to main ────────────────────────────────
-      # Commits .so files + generated bindings so JitPack and local devs
-      # can build without re-running the build script.
+      # ── Commit artifacts so JitPack can build the AAR from this tag ───────
+      # JitPack builds from the tagged commit; .so + bindings must be present.
+      # We force-add (bypassing .gitignore), commit, then move the tag here.
 
-      - name: Commit generated artefacts to main
-        working-directory: trueseal-sync-kotlin
-        env:
-          TAG: ${{ github.ref_name }}
+      - name: Commit native libs + UniFFI bindings
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add lib/src/main/jniLibs/ lib/src/main/java/
-          git diff --cached --quiet \
-            || git commit -m "chore: update native libs + UniFFI bindings for ${TAG} [skip ci]"
-          git push origin HEAD:main
+
+          # Force-add so .gitignore exclusions don't block us
+          git add --force \
+            lib/src/main/jniLibs/arm64-v8a/libtrueseal_sync.so \
+            lib/src/main/jniLibs/x86_64/libtrueseal_sync.so \
+            lib/src/main/java/uniffi/trueseal_sync/trueseal_sync.kt \
+            lib/src/main/java/uniffi/trueseal_noise/trueseal_noise.kt
+
+          git diff --cached --quiet && {
+            echo "No artifact changes — skipping commit."
+          } || {
+            git commit -m "chore: native libs + UniFFI bindings for ${GITHUB_REF_NAME} (upstream trueseal-sync ${UPSTREAM_VERSION}) [skip ci]"
+            # Move the tag to the new commit so JitPack sees the artifacts
+            git tag -f "${GITHUB_REF_NAME}"
+            git push origin HEAD:main
+            git push origin "${GITHUB_REF_NAME}" --force
+          }
 
       # ── GitHub Release ────────────────────────────────────────────────────
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          files: trueseal-sync-kotlin/lib/build/outputs/aar/lib-release.aar
-          generate_release_notes: true
+          files: lib/build/outputs/aar/lib-release.aar
           fail_on_unmatched_files: true
+          body: |
+            ## trueseal-sync-kotlin ${{ github.ref_name }}
+
+            Built against **trueseal-sync ${{ env.UPSTREAM_VERSION }}**.
+
+            ### JitPack
+            ```gradle
+            implementation("com.github.buenomini:trueseal-sync-kotlin:${{ github.ref_name }}")
+            ```
