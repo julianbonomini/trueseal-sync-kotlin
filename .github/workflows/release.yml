@@ -65,9 +65,6 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
-
       # ── Assemble AAR ──────────────────────────────────────────────────────
 
       - name: Set VERSION_NAME from tag
