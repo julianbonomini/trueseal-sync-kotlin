@@ -52,10 +52,10 @@ jobs:
             lib/src/main/java/uniffi/trueseal_sync \
             lib/src/main/java/uniffi/trueseal_noise
 
-          cp _artifacts/jniLibs/arm64-v8a/libtrueseal_sync.so  lib/src/main/jniLibs/arm64-v8a/
-          cp _artifacts/jniLibs/x86_64/libtrueseal_sync.so     lib/src/main/jniLibs/x86_64/
-          cp _artifacts/kotlin/uniffi/trueseal_sync/trueseal_sync.kt   lib/src/main/java/uniffi/trueseal_sync/
-          cp _artifacts/kotlin/uniffi/trueseal_noise/trueseal_noise.kt lib/src/main/java/uniffi/trueseal_noise/
+          cp _artifacts/trueseal-android-staging/jniLibs/arm64-v8a/libtrueseal_sync.so  lib/src/main/jniLibs/arm64-v8a/
+          cp _artifacts/trueseal-android-staging/jniLibs/x86_64/libtrueseal_sync.so     lib/src/main/jniLibs/x86_64/
+          cp _artifacts/trueseal-android-staging/kotlin/uniffi/trueseal_sync/trueseal_sync.kt   lib/src/main/java/uniffi/trueseal_sync/
+          cp _artifacts/trueseal-android-staging/kotlin/uniffi/trueseal_noise/trueseal_noise.kt lib/src/main/java/uniffi/trueseal_noise/
 
       # ── Java / Android SDK ────────────────────────────────────────────────
 
