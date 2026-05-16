@@ -44,7 +44,7 @@ android {
 
 dependencies {
     // JNA — UniFFI generated code uses JNA to call into the .so
-    api(libs.jna.android)
+    api(libs.jna.android) { artifact { type = "aar" } }
 
     // Coroutines — public API uses Flow
     api(libs.kotlinx.coroutines.android)
