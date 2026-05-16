@@ -2,51 +2,63 @@
 Patch generated UniFFI Kotlin bindings to fix two known codegen issues
 present in trueseal-sync <= v0.4.x:
 
-1. Duplicate close() methods — the base class emits
+1. Duplicate close() — the base class emits
        @Synchronized override fun close() { this.destroy() }
-   which conflicts with the Rust-exposed close() method that also generates
-       @Throws(...) override fun close() = ...
-   Fix: remove the base-class close() so only the Rust one remains.
+   which conflicts with the Rust-exposed close() when the Rust interface also
+   defines a `close()` method (e.g. SessionNk, SessionXx).
+   Fix: remove the base-class @Synchronized close() ONLY from classes that
+   also contain a @Throws override fun `close`() within 5000 chars ahead
+   (i.e. same class body). Classes with no Rust close() (e.g. NoiseTransportImpl)
+   are left untouched.
 
-2. `val `message`` constructor param shadows the `override val message`
-   property already declared in the same exception subclass body.
-   Fix: strip the `val` so it becomes a plain constructor parameter.
+2. `val `message`` constructor param shadows the `override val message` property
+   already declared in the same exception subclass body, causing a
+   "Conflicting declarations" / "recursive problem" error.
+   Fix: rename the constructor param to rawMessage and update the getter.
 """
 import re
-import sys
 from pathlib import Path
 
-PATTERNS = [
-    # 1. Remove @Synchronized override fun close() { this.destroy() }
-    (
-        re.compile(
-            r'\n[ \t]+@Synchronized\n[ \t]+override fun close\(\) \{\n[ \t]+this\.destroy\(\)\n[ \t]+\}'
-        ),
-        '',
-    ),
-    # 2. val `message`: kotlin.String  →  `message`: kotlin.String
-    (
-        re.compile(r'val `message`: kotlin\.String'),
-        '`message`: kotlin.String',
-    ),
-]
+SYNC_CLOSE = re.compile(
+    r'\n([ \t]+)@Synchronized\n\1override fun close\(\) \{\n\1    this\.destroy\(\)\n\1\}'
+)
+THROWS_CLOSE = re.compile(r'@Throws\([^)]+\)override fun `close`\(\)')
 
-targets = [
-    'lib/src/main/java/uniffi/trueseal_noise/trueseal_noise.kt',
-    'lib/src/main/java/uniffi/trueseal_sync/trueseal_sync.kt',
-]
+NEARBY_THRESHOLD = 5_000  # chars — same-class bodies are always < this distance
 
-for rel in targets:
-    p = Path(rel)
+
+def patch(path: str) -> None:
+    p = Path(path)
     if not p.exists():
-        print(f'skip (not found): {rel}')
-        continue
-    original = p.read_text()
-    patched = original
-    for pattern, replacement in PATTERNS:
-        patched = pattern.sub(replacement, patched)
-    if patched != original:
-        p.write_text(patched)
-        print(f'patched: {rel}')
-    else:
-        print(f'no changes: {rel}')
+        print(f"skip (not found): {path}")
+        return
+
+    txt = p.read_text()
+
+    # ── Fix 1: remove @Synchronized close() only near a @Throws close() ──────
+    throws_positions = [m.start() for m in THROWS_CLOSE.finditer(txt)]
+
+    # Process matches in reverse so offsets stay valid as we delete text.
+    patches = []
+    for m in SYNC_CLOSE.finditer(txt):
+        ahead = [tp for tp in throws_positions if tp > m.start()]
+        if ahead and (min(ahead) - m.start()) < NEARBY_THRESHOLD:
+            patches.append((m.start(), m.end()))
+
+    for start, end in reversed(patches):
+        txt = txt[:start] + txt[end:]
+
+    # ── Fix 2: rename `val `message`` → `val rawMessage` + update getters ────
+    txt = re.sub(r"val `message`: kotlin\.String", "val rawMessage: kotlin.String", txt)
+    txt = re.sub(
+        r'get\(\) = "message=\$\{ `message` \}"',
+        'get() = "message=${ rawMessage }"',
+        txt,
+    )
+
+    p.write_text(txt)
+    print(f"patched: {path}")
+
+
+patch("lib/src/main/java/uniffi/trueseal_noise/trueseal_noise.kt")
+patch("lib/src/main/java/uniffi/trueseal_sync/trueseal_sync.kt")
