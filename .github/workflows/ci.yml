@@ -62,5 +62,16 @@ jobs:
 
       # ── Test ──────────────────────────────────────────────────────────────
 
+      - name: Debug Gradle env
+        run: |
+          echo "GRADLE_OPTS='$GRADLE_OPTS'"
+          echo "JAVA_OPTS='$JAVA_OPTS'"
+          echo "JAVA_TOOL_OPTIONS='$JAVA_TOOL_OPTIONS'"
+          echo "_JAVA_OPTIONS='$_JAVA_OPTIONS'"
+          env | grep -iE 'gradle|java' | sort || true
+
       - name: Run unit tests
+        env:
+          GRADLE_OPTS: ""
+          JAVA_OPTS: ""
         run: ./gradlew :lib:testReleaseUnitTest
