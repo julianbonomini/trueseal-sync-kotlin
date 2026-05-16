@@ -52,23 +52,7 @@ jobs:
           cp _artifacts/trueseal-android-staging/kotlin/uniffi/trueseal_sync/trueseal_sync.kt   lib/src/main/java/uniffi/trueseal_sync/
           cp _artifacts/trueseal-android-staging/kotlin/uniffi/trueseal_noise/trueseal_noise.kt lib/src/main/java/uniffi/trueseal_noise/
 
-          # Patch generated bindings: fix two known UniFFI codegen issues
-          # 1. @Synchronized override fun close() duplicates the Rust-generated close()
-          # 2. `val `message`` constructor param shadows `override val message` in exceptions
-          python3 - <<'PYEOF'
-import re
-for path in [
-    "lib/src/main/java/uniffi/trueseal_noise/trueseal_noise.kt",
-    "lib/src/main/java/uniffi/trueseal_sync/trueseal_sync.kt",
-]:
-    try:
-        txt = open(path).read()
-        txt = re.sub(r'\n\s+@Synchronized\n\s+override fun close\(\) \{\n\s+this\.destroy\(\)\n\s+\}', '', txt)
-        txt = re.sub(r'val `message`: kotlin\.String', '`message`: kotlin.String', txt)
-        open(path, 'w').write(txt)
-    except FileNotFoundError:
-        pass
-PYEOF
+          python3 .github/scripts/patch_uniffi.py
 
       # ── Java / Android SDK ────────────────────────────────────────────────
 
