@@ -29,7 +29,7 @@ jobs:
 
           UPSTREAM_VERSION=$(echo "$RELEASE_JSON" | jq -r '.tag_name')
           ASSET_URL=$(echo "$RELEASE_JSON" | jq -r \
-            '.assets[] | select(.name | startswith("trueseal-sync-android-")) | .url')
+            '.assets[] | select(.name | (startswith("trueseal-sync-android-") and endswith(".zip"))) | .url')
 
           echo "Fetching upstream $UPSTREAM_VERSION → $ASSET_URL"
           echo "UPSTREAM_VERSION=$UPSTREAM_VERSION" >> "$GITHUB_ENV"
