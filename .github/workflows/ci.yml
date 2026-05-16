@@ -25,7 +25,7 @@ jobs:
         run: |
           RELEASE_JSON=$(curl -sf \
             -H "Authorization: token $TRUESEAL_READ_TOKEN" \
-            "https://api.github.com/repos/buenomini/trueseal-sync/releases/latest")
+            "https://api.github.com/repos/julianbonomini/trueseal-sync/releases/latest")
 
           UPSTREAM_VERSION=$(echo "$RELEASE_JSON" | jq -r '.tag_name')
           ASSET_URL=$(echo "$RELEASE_JSON" | jq -r \
