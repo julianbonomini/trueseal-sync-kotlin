@@ -1,10 +1,10 @@
 # trueseal-sync-kotlin
 
-Android SDK for [trueseal-sync](https://github.com/buenomini/trueseal-sync) — E2EE, local-first sync between devices. Device identity, pairing, encrypted delivery, and outbox replay. No accounts. No server-side keys.
+Android SDK for [trueseal-sync](https://trueseal.dev/docs/protocol/overview) — E2EE, local-first sync between devices. Device identity, pairing, encrypted delivery, and outbox replay. No accounts. No server-side keys.
 
-[![JitPack](https://jitpack.io/v/buenomini/trueseal-sync-kotlin.svg)](https://jitpack.io/#buenomini/trueseal-sync-kotlin)
+[![JitPack](https://jitpack.io/v/julianbonomini/trueseal-sync-kotlin.svg)](https://jitpack.io/#julianbonomini/trueseal-sync-kotlin)
 
-For architecture, protocol semantics, and integration patterns see the **[trueseal-sync integration guide](https://github.com/buenomini/trueseal-sync/blob/main/docs/integrating-trueseal-sync.md)**.
+For architecture, protocol semantics, and integration patterns see the **[trueseal-sync integration guide](https://trueseal.dev/docs/guides/integrating-trueseal-sync)**.
 
 ---
 
@@ -24,7 +24,7 @@ dependencyResolutionManagement {
 ```kotlin
 // app/build.gradle.kts
 dependencies {
-    implementation("com.github.buenomini:trueseal-sync-kotlin:<version>")
+    implementation("com.github.julianbonomini:trueseal-sync-kotlin:<version>")
 }
 ```
 
@@ -46,7 +46,7 @@ val client = TruesealSyncClient(
 ```
 
 `relayHost` and `relayPublicKey` are build-time constants — not user-configurable.
-See [how to get the relay public key](https://github.com/buenomini/trueseal-sync/blob/main/docs/integrating-trueseal-sync.md#relay-public-key).
+See [how to get the relay public key](https://trueseal.dev/docs/guides/integrating-trueseal-sync#relay-public-key).
 
 **`namespace`:** always pass an explicit value scoped to your app (`"com.example.myapp"`).
 The default is `"default"` — fine for a single app, wrong if multiple apps share the device.
@@ -171,7 +171,7 @@ client.destroyGroup()
 // All Flows complete. Call close() and reinitialise with a new TruesealSyncClient.
 ```
 
-There is no "leave quietly" protocol — see the [integration guide §9](https://github.com/buenomini/trueseal-sync/blob/main/docs/integrating-trueseal-sync.md#9-group-exit) for the workaround.
+There is no "leave quietly" protocol — see the [integration guide §9](https://trueseal.dev/docs/guides/integrating-trueseal-sync#9-group-exit) for the workaround.
 
 ---
 
@@ -255,4 +255,4 @@ git tag v0.1.1 && git push origin v0.1.1
 
 ## License
 
-MIT — see [LICENSE](LICENSE).
+Apache 2.0 — see [LICENSE](LICENSE).
