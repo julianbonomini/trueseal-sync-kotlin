@@ -87,7 +87,10 @@ step "Cross-compiling trueseal-sync for Android targets (profile=$PROFILE)"
 # Store uploads from Nov 2025. Without this, dlopen fails on modern
 # devices/emulators with: "program alignment (8192) cannot be smaller
 # than system page size (16384)".
-export RUSTFLAGS="${RUSTFLAGS:-} -C link-arg=-Wl,-z,max-page-size=16384"
+# Scope per-target: macOS ld64 rejects -Wl,-z,max-page-size, so we must
+# NOT leak this into the host (aarch64-apple-darwin) build below.
+export CARGO_TARGET_AARCH64_LINUX_ANDROID_RUSTFLAGS="${CARGO_TARGET_AARCH64_LINUX_ANDROID_RUSTFLAGS:-} -C link-arg=-Wl,-z,max-page-size=16384"
+export CARGO_TARGET_X86_64_LINUX_ANDROID_RUSTFLAGS="${CARGO_TARGET_X86_64_LINUX_ANDROID_RUSTFLAGS:-} -C link-arg=-Wl,-z,max-page-size=16384"
 
 for entry in "${TARGETS[@]}"; do
     RUST_TARGET="${entry%%:*}"
