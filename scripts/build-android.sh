@@ -83,6 +83,12 @@ TARGETS=(
 
 step "Cross-compiling trueseal-sync for Android targets (profile=$PROFILE)"
 
+# 16KB-page-size alignment — required by Android 15+ devices and Play
+# Store uploads from Nov 2025. Without this, dlopen fails on modern
+# devices/emulators with: "program alignment (8192) cannot be smaller
+# than system page size (16384)".
+export RUSTFLAGS="${RUSTFLAGS:-} -C link-arg=-Wl,-z,max-page-size=16384"
+
 for entry in "${TARGETS[@]}"; do
     RUST_TARGET="${entry%%:*}"
     ABI="${entry##*:}"
