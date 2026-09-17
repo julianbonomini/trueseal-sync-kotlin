@@ -128,11 +128,12 @@ client.blobs
     .onEach { blob ->
         val text = blob.text                // null if payload is not valid UTF-8
         val from = blob.senderPublicKey     // sender's 32-byte X25519 pubkey (stable ID)
+        val id = blob.messageId             // stable across re-delivery
     }
     .launchIn(viewModelScope)
 ```
 
-**The relay may echo your own messages back.** Deduplicate at the app layer — check content against local storage, don't rely on sender filtering.
+**Delivery is at least once.** Persist `blob.messageId` in the same transaction as your application update. Ignore the blob when that opaque ID already exists.
 
 ---
 

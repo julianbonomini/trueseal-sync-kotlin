@@ -15,8 +15,10 @@ import uniffi.trueseal_sync.*
 internal class BlobCallbackHandler(
     private val channel: SendChannel<ReceivedBlob>,
 ) : MessageCallback {
-    override fun `onMessage`(blob: ByteArray, senderNoisePub: ByteArray) {
-        channel.trySend(ReceivedBlob(data = blob, senderPublicKey = senderNoisePub))
+    override fun `onMessage`(blob: ByteArray, senderNoisePub: ByteArray, messageId: String) {
+        channel.trySend(
+            ReceivedBlob(data = blob, senderPublicKey = senderNoisePub, messageId = messageId)
+        )
     }
 }
 

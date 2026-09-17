@@ -670,7 +670,7 @@ internal interface UniffiCallbackInterfaceMemberRequestCallbackMethod0 : com.sun
     fun callback(`uniffiHandle`: Long,`token`: RustBuffer.ByValue,`name`: RustBuffer.ByValue,`uniffiOutReturn`: Pointer,uniffiCallStatus: UniffiRustCallStatus,)
 }
 internal interface UniffiCallbackInterfaceMessageCallbackMethod0 : com.sun.jna.Callback {
-    fun callback(`uniffiHandle`: Long,`blob`: RustBuffer.ByValue,`senderNoisePub`: RustBuffer.ByValue,`uniffiOutReturn`: Pointer,uniffiCallStatus: UniffiRustCallStatus,)
+    fun callback(`uniffiHandle`: Long,`blob`: RustBuffer.ByValue,`senderNoisePub`: RustBuffer.ByValue,`messageId`: RustBuffer.ByValue,`uniffiOutReturn`: Pointer,uniffiCallStatus: UniffiRustCallStatus,)
 }
 internal interface UniffiCallbackInterfaceRemovedFromGroupCallbackMethod0 : com.sun.jna.Callback {
     fun callback(`uniffiHandle`: Long,`uniffiOutReturn`: Pointer,uniffiCallStatus: UniffiRustCallStatus,)
@@ -1189,7 +1189,7 @@ private fun uniffiCheckApiChecksums(lib: UniffiLib) {
     if (lib.uniffi_trueseal_sync_checksum_method_memberrequestcallback_on_member_request() != 54231.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_trueseal_sync_checksum_method_messagecallback_on_message() != 36172.toShort()) {
+    if (lib.uniffi_trueseal_sync_checksum_method_messagecallback_on_message() != 11941.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_trueseal_sync_checksum_method_removedfromgroupcallback_on_removed_from_group() != 30132.toShort()) {
@@ -2555,10 +2555,11 @@ public object FfiConverterTypeMemberRequestCallback: FfiConverterCallbackInterfa
 /**
  * Fired when a `Sync` message is delivered to this device.
  * `blob` is the raw application payload; `sender_noise_pub` is the sender's 32-byte X25519 key.
+ * `message_id` is stable across re-delivery and opaque to callers.
  */
 public interface MessageCallback {
     
-    fun `onMessage`(`blob`: kotlin.ByteArray, `senderNoisePub`: kotlin.ByteArray)
+    fun `onMessage`(`blob`: kotlin.ByteArray, `senderNoisePub`: kotlin.ByteArray, `messageId`: kotlin.String)
     
     companion object
 }
@@ -2568,12 +2569,13 @@ public interface MessageCallback {
 // Put the implementation in an object so we don't pollute the top-level namespace
 internal object uniffiCallbackInterfaceMessageCallback {
     internal object `onMessage`: UniffiCallbackInterfaceMessageCallbackMethod0 {
-        override fun callback(`uniffiHandle`: Long,`blob`: RustBuffer.ByValue,`senderNoisePub`: RustBuffer.ByValue,`uniffiOutReturn`: Pointer,uniffiCallStatus: UniffiRustCallStatus,) {
+        override fun callback(`uniffiHandle`: Long,`blob`: RustBuffer.ByValue,`senderNoisePub`: RustBuffer.ByValue,`messageId`: RustBuffer.ByValue,`uniffiOutReturn`: Pointer,uniffiCallStatus: UniffiRustCallStatus,) {
             val uniffiObj = FfiConverterTypeMessageCallback.handleMap.get(uniffiHandle)
             val makeCall = { ->
                 uniffiObj.`onMessage`(
                     FfiConverterByteArray.lift(`blob`),
                     FfiConverterByteArray.lift(`senderNoisePub`),
+                    FfiConverterString.lift(`messageId`),
                 )
             }
             val writeReturn = { _: Unit -> Unit }

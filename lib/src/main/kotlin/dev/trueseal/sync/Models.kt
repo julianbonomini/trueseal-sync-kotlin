@@ -16,6 +16,8 @@ data class ReceivedBlob(
      * Stable per device — use as a sender identity token.
      */
     val senderPublicKey: ByteArray,
+    /** Stable opaque identifier for this message across relay re-delivery. */
+    val messageId: String,
 ) {
     /** Convenience: interprets [data] as UTF-8 text. Returns null if not valid UTF-8. */
     val text: String?
@@ -30,10 +32,17 @@ data class ReceivedBlob(
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other !is ReceivedBlob) return false
-        return data.contentEquals(other.data) && senderPublicKey.contentEquals(other.senderPublicKey)
+        return data.contentEquals(other.data) &&
+            senderPublicKey.contentEquals(other.senderPublicKey) &&
+            messageId == other.messageId
     }
 
-    override fun hashCode(): Int = 31 * data.contentHashCode() + senderPublicKey.contentHashCode()
+    override fun hashCode(): Int {
+        var result = data.contentHashCode()
+        result = 31 * result + senderPublicKey.contentHashCode()
+        result = 31 * result + messageId.hashCode()
+        return result
+    }
 }
 
 // ── SyncMember ────────────────────────────────────────────────────────────────

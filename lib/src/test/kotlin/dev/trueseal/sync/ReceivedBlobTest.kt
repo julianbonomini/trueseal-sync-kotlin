@@ -10,7 +10,8 @@ class ReceivedBlobTest {
     fun `text returns UTF-8 string when payload is valid UTF-8`() {
         val blob = ReceivedBlob(
             data = "Hello, trueseal!".toByteArray(Charsets.UTF_8),
-            senderPublicKey = ByteArray(32)
+            senderPublicKey = ByteArray(32),
+            messageId = "tsm1_example"
         )
         assertEquals("Hello, trueseal!", blob.text)
     }
@@ -19,7 +20,8 @@ class ReceivedBlobTest {
     fun `text returns null for non-UTF-8 bytes`() {
         val blob = ReceivedBlob(
             data = byteArrayOf(0xFF.toByte(), 0xFE.toByte()),
-            senderPublicKey = ByteArray(32)
+            senderPublicKey = ByteArray(32),
+            messageId = "tsm1_example"
         )
         assertNull(blob.text)
     }
@@ -27,7 +29,21 @@ class ReceivedBlobTest {
     @Test
     fun `senderPublicKey is preserved`() {
         val key = ByteArray(32) { it.toByte() }
-        val blob = ReceivedBlob(data = ByteArray(0), senderPublicKey = key)
+        val blob = ReceivedBlob(
+            data = ByteArray(0),
+            senderPublicKey = key,
+            messageId = "tsm1_example"
+        )
         assertEquals(key.toList(), blob.senderPublicKey.toList())
+    }
+
+    @Test
+    fun `messageId is preserved`() {
+        val blob = ReceivedBlob(
+            data = ByteArray(0),
+            senderPublicKey = ByteArray(32),
+            messageId = "tsm1_stable"
+        )
+        assertEquals("tsm1_stable", blob.messageId)
     }
 }
