@@ -31,11 +31,9 @@ class ApiSurfaceTest {
     fun `open, info, limits and parseRelayAddress live on the companion`() {
         val companion = trueSealClass.declaredClasses.first { it.simpleName == "Companion" }
         val methods = companion.declaredMethods.map { it.name }.toSet()
-        assertTrue(methods.contains("open"))
-        assertTrue(methods.contains("parseRelayAddress"))
-        assertTrue(methods.contains("getInfo"))
-        assertTrue(methods.contains("getMaxPayloadBytes"))
-        assertTrue(methods.contains("getMaxGroupSize"))
+        for (expected in listOf("open", "parseRelayAddress", "getInfo", "getMaxPayloadBytes", "getMaxGroupSize")) {
+            assertTrue("companion must declare $expected; found: ${methods.sorted()}", methods.contains(expected))
+        }
     }
 
     @Test
@@ -58,12 +56,19 @@ class ApiSurfaceTest {
             .flatMap { listOf(it.returnType) + it.parameterTypes }
             .map { it.name }
             .filter { it.startsWith("uniffi.") }
+        // Kotlin generates a public SYNTHETIC constructor (private ctor +
+        // DefaultConstructorMarker) so the companion can call the private
+        // primary constructor — compiler machinery, not public API.
         val constructorLeaks = trueSealClass.declaredConstructors
-            .filter { java.lang.reflect.Modifier.isPublic(it.modifiers) }
+            .filter { java.lang.reflect.Modifier.isPublic(it.modifiers) && !it.isSynthetic }
             .flatMap { it.parameterTypes.toList() }
             .map { it.name }
             .filter { it.startsWith("uniffi.") }
-        assertTrue("FFI types leaked: ${methodLeaks + constructorLeaks}", (methodLeaks + constructorLeaks).isEmpty())
+        assertTrue(
+            "FFI types leaked: ${methodLeaks + constructorLeaks}; " +
+                "public methods were: ${publicMethods.map { m -> m.name + m.parameterTypes.map { it.simpleName } }}",
+            (methodLeaks + constructorLeaks).isEmpty(),
+        )
     }
 
     @Test
