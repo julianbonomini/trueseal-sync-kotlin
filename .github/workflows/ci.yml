@@ -19,25 +19,22 @@ jobs:
 
       # ── Fetch pre-built .so + Kotlin bindings from trueseal-sync release ──
 
-      - name: Download trueseal-sync Android artifacts
+      # INTERIM (SDK-1, #4): pinned to this repo's core-v0.6.0 mirror prerelease
+      # (byte-exact, checksum-verified) because TRUESEAL_READ_TOKEN is expired
+      # and the core's v0.6.0 release is a draft. KOTLIN-3 (#11) owns the
+      # permanent exact-tag + checksum pin (G8). NEVER releases/latest.
+      - name: Download trueseal-sync Android artifacts (pinned)
         env:
-          TRUESEAL_READ_TOKEN: ${{ secrets.TRUESEAL_READ_TOKEN }}
+          CORE_VERSION: v0.6.0
+          CORE_ZIP_SHA256: 37faff4678f426162e908c06e3c05fec329b8f7c2320247c886d3b6f54aa115d
         run: |
-          RELEASE_JSON=$(curl -sf \
-            -H "Authorization: token $TRUESEAL_READ_TOKEN" \
-            "https://api.github.com/repos/julianbonomini/trueseal-sync/releases/latest")
+          ASSET_URL="https://github.com/julianbonomini/trueseal-sync-kotlin/releases/download/core-${CORE_VERSION}/trueseal-sync-android-${CORE_VERSION}.zip"
+          echo "Fetching pinned core $CORE_VERSION → $ASSET_URL"
+          echo "UPSTREAM_VERSION=$CORE_VERSION" >> "$GITHUB_ENV"
 
-          UPSTREAM_VERSION=$(echo "$RELEASE_JSON" | jq -r '.tag_name')
-          ASSET_URL=$(echo "$RELEASE_JSON" | jq -r \
-            '.assets[] | select(.name | (startswith("trueseal-sync-android-") and endswith(".zip"))) | .url')
+          curl -sfL "$ASSET_URL" -o trueseal-sync-android.zip
 
-          echo "Fetching upstream $UPSTREAM_VERSION → $ASSET_URL"
-          echo "UPSTREAM_VERSION=$UPSTREAM_VERSION" >> "$GITHUB_ENV"
-
-          curl -sf -L \
-            -H "Authorization: token $TRUESEAL_READ_TOKEN" \
-            -H "Accept: application/octet-stream" \
-            "$ASSET_URL" -o trueseal-sync-android.zip
+          echo "$CORE_ZIP_SHA256  trueseal-sync-android.zip" | shasum -a 256 -c -
 
           unzip -q trueseal-sync-android.zip -d _artifacts
 
