@@ -60,22 +60,19 @@ class NativeLaneTest {
     }
 
     @Test
-    fun `open creates an identity and send queues through the real core`() = runBlocking {
+    fun `open creates an identity through the real core`() = runBlocking {
         val dir = Files.createTempDirectory("trueseal-jvm-lane").toFile()
         val relay = "trueseal://${"aa".repeat(32)}@127.0.0.1:17700?push=17701"
         val ts = TrueSeal.open(relay = relay, storage = Storage.directory(dir))
         try {
-            // A real identity from the real core (64-hex X25519 public key).
-            assertEquals(64, ts.me.value.id.length)
+            // A real identity from the real core. Member.id is stable and
+            // opaque (ADR-0028) — assert presence, not a format.
+            assertTrue(ts.me.value.id.isNotEmpty())
             assertTrue(ts.me.value.name.isNotEmpty())
-
-            // The relay is unreachable (background connect fails); per
-            // ADR-0026 send() still succeeds — the body lands in the outbox.
-            val messageId = ts.send("hello jvm lane".toByteArray())
-            assertTrue("message IDs carry the tsm1_ prefix", messageId.startsWith("tsm1_"))
+            assertEquals(dev.trueseal.sync.GroupStatus.NotJoined, ts.status.value)
 
             // Session State on disk is the real SQLite store.
-            assertTrue(File(dir, "default").exists() || dir.listFiles()?.isNotEmpty() == true)
+            assertTrue(dir.listFiles()?.isNotEmpty() == true)
         } finally {
             ts.close()
             dir.deleteRecursively()
@@ -83,19 +80,21 @@ class NativeLaneTest {
     }
 
     @Test
-    fun `send enforces the protocol size limit through the lane`() = runBlocking {
-        val dir = Files.createTempDirectory("trueseal-jvm-lane-limit").toFile()
+    fun `typed errors cross the FFI on this lane`() = runBlocking {
+        val dir = Files.createTempDirectory("trueseal-jvm-lane-errors").toFile()
         val relay = "trueseal://${"bb".repeat(32)}@127.0.0.1:17700?push=17701"
         val ts = TrueSeal.open(relay = relay, storage = Storage.directory(dir))
         try {
+            // send() while NotJoined is refused with the canonical typed
+            // error (ADR-0028 notMember{status}) — proof the 14-case typed
+            // surface behaves on this lane, not just compiles.
             try {
-                ts.send(ByteArray(61_441))
-                fail("61,441 bytes must throw payloadTooLarge")
-            } catch (e: dev.trueseal.sync.TrueSealError.PayloadTooLarge) {
-                // expected — the typed error crosses the FFI on this lane
+                ts.send("hello".toByteArray())
+                fail("send while NotJoined must throw")
+            } catch (e: dev.trueseal.sync.TrueSealError.NotMember) {
+                assertEquals("notMember", e.code)
+                assertEquals(dev.trueseal.sync.GroupStatus.NotJoined, e.status)
             }
-            val id = ts.send(ByteArray(61_440))
-            assertTrue(id.startsWith("tsm1_"))
         } finally {
             ts.close()
             dir.deleteRecursively()

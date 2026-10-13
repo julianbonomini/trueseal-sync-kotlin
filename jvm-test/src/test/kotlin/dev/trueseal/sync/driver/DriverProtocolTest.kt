@@ -75,9 +75,9 @@ class DriverProtocolTest {
                 """{"id":2,"command":"open","storagePath":"${dir.absolutePath}",""" +
                     """"relay":"trueseal://${"cc".repeat(32)}@127.0.0.1:17700?push=17701"}""",
             )
-            assertTrue(open.getValue("ok").jsonPrimitive.boolean)
+            assertTrue("open failed: $open", open.getValue("ok").jsonPrimitive.boolean)
             val me = open.getValue("result").jsonObject.getValue("me").jsonObject
-            assertEquals(64, me.getValue("id").jsonPrimitive.content.length)
+            assertTrue(me.getValue("id").jsonPrimitive.content.isNotEmpty())
 
             val status = h.command("""{"id":3,"command":"status"}""")
             assertEquals(
@@ -85,16 +85,19 @@ class DriverProtocolTest {
                 status.getValue("result").jsonObject.getValue("status").jsonPrimitive.content,
             )
 
+            // send while NotJoined: the CANONICAL typed error crosses the
+            // protocol (error.code == the TrueSealError code, G12 parity).
             val send = h.command(
-                """{"id":4,"command":"send","bodyHex":"${"68656c6c6f"}"}""",
+                """{"id":4,"command":"send","bodyHex":"68656c6c6f"}""",
             )
-            assertTrue(
-                send.getValue("result").jsonObject.getValue("messageId")
-                    .jsonPrimitive.content.startsWith("tsm1_"),
+            assertTrue(!send.getValue("ok").jsonPrimitive.boolean)
+            assertEquals(
+                "notMember",
+                send.getValue("error").jsonObject.getValue("code").jsonPrimitive.content,
             )
 
             val close = h.command("""{"id":5,"command":"close"}""")
-            assertTrue(close.getValue("ok").jsonPrimitive.boolean)
+            assertTrue("close failed: $close", close.getValue("ok").jsonPrimitive.boolean)
             dir.deleteRecursively()
 
             // Errors are typed: a second send with no session is a driver error.
