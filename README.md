@@ -2,6 +2,8 @@
 
 Android SDK for [trueseal-sync](https://trueseal.dev/docs/protocol/overview) — E2EE, local-first sync between devices. Device identity, pairing, encrypted delivery, and outbox replay. No accounts. No server-side keys.
 
+**Android is the only supported Kotlin target.** The `:jvm-test` module is a test-only build of the same sources for the headless e2e lanes ([jvm-test/README.md](jvm-test/README.md)) — it is never published and plain JVM stays unsupported.
+
 [![JitPack](https://jitpack.io/v/julianbonomini/trueseal-sync-kotlin.svg)](https://jitpack.io/#julianbonomini/trueseal-sync-kotlin)
 
 For architecture, protocol semantics, and integration patterns see the **[trueseal-sync integration guide](https://trueseal.dev/docs/guides/integrating-trueseal-sync)**.

@@ -45,3 +45,40 @@ jobs:
           GRADLE_OPTS: ""
           JAVA_OPTS: ""
         run: ./gradlew :lib:testReleaseUnitTest
+
+  # ── KOTLIN-2 (#10, e2e ADR-0001): the headless JVM lane ──────────────────
+  # The SAME sources as :lib, compiled for plain JVM and run against the
+  # pinned Linux x64 core. A lane that can't run counts as a failure, so
+  # TRUSEAL_JVM_LANE=require turns the local skip into a hard error.
+  jvm-lane:
+    name: JVM test lane (KOTLIN-2, headless e2e)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Check workflow pins (no floating inputs)
+        run: bash scripts/check-pins.sh
+
+      - name: Check :jvm-test stays test-only (no publication)
+        run: bash scripts/check-jvm-test-only.sh
+
+      # The UniFFI Kotlin bindings come from the Android zip; the lane loads
+      # the pinned Linux x64 .so. Both through the single pinned fetch path.
+      - name: Download pinned trueseal-sync Android artifacts (bindings)
+        run: bash scripts/fetch-core-artifacts.sh
+
+      - name: Download pinned trueseal-sync Linux x64 core
+        run: bash scripts/fetch-core-artifacts.sh --linux
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Run the JVM lane (shared unit tests + native + driver protocol)
+        env:
+          TRUSEAL_JVM_LANE: require
+        run: ./gradlew :jvm-test:test
