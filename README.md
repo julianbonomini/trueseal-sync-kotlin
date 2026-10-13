@@ -105,7 +105,7 @@ with `cancelPairing()` if the user backs out — unaccepted requests disappear w
 
 ```kotlin
 // Send — returns the Message ID once durably queued (throws typed errors while
-// not a member, or over the 61,440-byte limit)
+// not a member, or over the payload limit — TrueSeal.maxPayloadBytes)
 val messageId = ts.send("hello".encodeToByteArray())
 
 // Receive — one awaited handler per object; registering it starts receiving
