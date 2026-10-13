@@ -31,7 +31,13 @@ class ApiSurfaceTest {
     fun `open, info, limits and parseRelayAddress live on the companion`() {
         val companion = trueSealClass.declaredClasses.first { it.simpleName == "Companion" }
         val methods = companion.declaredMethods.map { it.name }.toSet()
-        for (expected in listOf("open", "parseRelayAddress", "getInfo", "getMaxPayloadBytes", "getMaxGroupSize")) {
+        // `open` takes a `UInt?` parameter — Kotlin name-mangles functions
+        // with inline-class parameters (`open-<hash>`), so match the prefix.
+        assertTrue(
+            "companion must declare open; found: ${methods.sorted()}",
+            methods.any { it == "open" || it.startsWith("open-") },
+        )
+        for (expected in listOf("parseRelayAddress", "getInfo", "getMaxPayloadBytes", "getMaxGroupSize")) {
             assertTrue("companion must declare $expected; found: ${methods.sorted()}", methods.contains(expected))
         }
     }
