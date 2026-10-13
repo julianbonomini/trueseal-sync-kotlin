@@ -182,4 +182,17 @@ class ModelMappingTest {
         )
         assertEquals(address, address.toFfi().toPublic())
     }
+
+    @Test
+    fun `RelayAddress port defaults are the protocol ports`() {
+        // KOTLIN-3 (SDK-1 re-gate note 5): the defaults ARE the protocol's
+        // well-known ports (relay ADR-0008) — pin them so a refactor can't
+        // silently change what a default-constructed RelayAddress dials.
+        val defaulted = RelayAddress(
+            host = "relay.example.com",
+            publicKey = ByteArray(32),
+        )
+        assertEquals(7700.toUShort(), defaulted.receivePort)
+        assertEquals(7701.toUShort(), defaulted.pushPort)
+    }
 }

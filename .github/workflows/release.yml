@@ -22,42 +22,19 @@ jobs:
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      # ── Fetch pre-built .so + Kotlin bindings from trueseal-sync release ──
+      # ── G8 pin guard (KOTLIN-3, #11) ──────────────────────────────────────
 
-      - name: Download trueseal-sync Android artifacts
-        env:
-          TRUESEAL_READ_TOKEN: ${{ secrets.TRUESEAL_READ_TOKEN }}
-        run: |
-          RELEASE_JSON=$(curl -sf \
-            -H "Authorization: token $TRUESEAL_READ_TOKEN" \
-            "https://api.github.com/repos/julianbonomini/trueseal-sync/releases/latest")
+      - name: Check workflow pins (no floating inputs)
+        run: bash scripts/check-pins.sh
 
-          UPSTREAM_VERSION=$(echo "$RELEASE_JSON" | jq -r '.tag_name')
-          ASSET_URL=$(echo "$RELEASE_JSON" | jq -r \
-            '.assets[] | select(.name | (startswith("trueseal-sync-android-") and endswith(".zip"))) | .url')
+      # ── Fetch pre-built .so + Kotlin bindings via the single pinned path ──
 
-          echo "Fetching upstream $UPSTREAM_VERSION → $ASSET_URL"
-          echo "UPSTREAM_VERSION=$UPSTREAM_VERSION" >> "$GITHUB_ENV"
-
-          curl -sf -L \
-            -H "Authorization: token $TRUESEAL_READ_TOKEN" \
-            -H "Accept: application/octet-stream" \
-            "$ASSET_URL" -o trueseal-sync-android.zip
-
-          unzip -q trueseal-sync-android.zip -d _artifacts
-
-          mkdir -p \
-            lib/src/main/jniLibs/arm64-v8a \
-            lib/src/main/jniLibs/x86_64 \
-            lib/src/main/java/uniffi/trueseal_sync \
-            lib/src/main/java/uniffi/trueseal_noise
-
-          cp _artifacts/trueseal-android-staging/jniLibs/arm64-v8a/libtrueseal_sync.so  lib/src/main/jniLibs/arm64-v8a/
-          cp _artifacts/trueseal-android-staging/jniLibs/x86_64/libtrueseal_sync.so     lib/src/main/jniLibs/x86_64/
-          cp _artifacts/trueseal-android-staging/kotlin/uniffi/trueseal_sync/trueseal_sync.kt   lib/src/main/java/uniffi/trueseal_sync/
-          cp _artifacts/trueseal-android-staging/kotlin/uniffi/trueseal_noise/trueseal_noise.kt lib/src/main/java/uniffi/trueseal_noise/
-
-          python3 .github/scripts/patch_uniffi.py
+      # The pin (exact version + SHA-256) lives in scripts/fetch-core-artifacts.sh;
+      # the old floating latest-release lookup and the expired TRUESEAL_READ_TOKEN
+      # dependency are gone (KOTLIN-3, #11). UPSTREAM_VERSION is exported by
+      # the script for the release notes below.
+      - name: Download pinned trueseal-sync Android artifacts
+        run: bash scripts/fetch-core-artifacts.sh
 
       # ── Java / Android SDK ────────────────────────────────────────────────
 

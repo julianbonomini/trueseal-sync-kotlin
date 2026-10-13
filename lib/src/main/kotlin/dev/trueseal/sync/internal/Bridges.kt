@@ -18,6 +18,21 @@ import uniffi.trueseal_sync.DeliveryIssue as FfiDeliveryIssue
  */
 
 /**
+ * Reports a contained listener failure. A swallowed exception must still be
+ * OBSERVABLE (KOTLIN-3, SDK-1 re-gate): android.util.Log on Android,
+ * System.err on the JVM unit-test lane (where android.util.Log is not
+ * mocked and throws).
+ */
+internal fun warnContainedListenerFailure(what: String, t: Throwable) {
+    val msg = "TrueSeal $what listener threw — contained, delivery continues: ${t.message ?: t.toString()}"
+    try {
+        android.util.Log.w("TrueSeal", msg)
+    } catch (_: Throwable) {
+        System.err.println(msg)
+    }
+}
+
+/**
  * The one message handler. The core AWAITS it (ADR-0026): the Blob is
  * acked only after [handler] completes. A throw becomes
  * [HandlerException.Failed], which the core treats as a failed handler
@@ -50,9 +65,9 @@ internal class MessageHandlerBridge(
  * non-throwing closures) can throw at runtime, and an exception escaping
  * an FFI callback becomes a panic on the core thread via UniFFI — an app
  * bug must not kill the session (ADR-0026's blast-radius rule). The
- * exception is swallowed; delivery issues already carry the app's
- * message-handler failures, and event listeners have no failure channel
- * in ADR-0028.
+ * exception is contained and REPORTED (see [warnContainedListenerFailure]);
+ * delivery issues already carry the app's message-handler failures, and
+ * event listeners have no failure channel in ADR-0028.
  */
 internal class EventListenerBridge(
     private val listener: (TrueSealEvent) -> Unit,
@@ -60,6 +75,7 @@ internal class EventListenerBridge(
     override fun `onEvent`(event: FfiTrueSealEvent) {
         val mapped = event.toPublic()
         runCatching { listener(mapped) }
+            .onFailure { warnContainedListenerFailure("event", it) }
     }
 }
 
@@ -71,5 +87,6 @@ internal class IssueListenerBridge(
     override fun `onDeliveryIssue`(issue: FfiDeliveryIssue) {
         val mapped = issue.toPublic()
         runCatching { listener(mapped) }
+            .onFailure { warnContainedListenerFailure("delivery-issue", it) }
     }
 }

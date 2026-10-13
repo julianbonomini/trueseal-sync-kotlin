@@ -17,39 +17,18 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      # ── Fetch pre-built .so + Kotlin bindings from trueseal-sync release ──
+      # ── G8 pin guard (KOTLIN-3, #11) ──────────────────────────────────────
 
-      # INTERIM (SDK-1, #4): pinned to this repo's core-v0.6.0 mirror prerelease
-      # (byte-exact, checksum-verified) because TRUESEAL_READ_TOKEN is expired
-      # and the core's v0.6.0 release is a draft. KOTLIN-3 (#11) owns the
-      # permanent exact-tag + checksum pin (G8). NEVER releases/latest.
-      - name: Download trueseal-sync Android artifacts (pinned)
-        env:
-          CORE_VERSION: v0.6.0
-          CORE_ZIP_SHA256: 37faff4678f426162e908c06e3c05fec329b8f7c2320247c886d3b6f54aa115d
-        run: |
-          ASSET_URL="https://github.com/julianbonomini/trueseal-sync-kotlin/releases/download/core-${CORE_VERSION}/trueseal-sync-android-${CORE_VERSION}.zip"
-          echo "Fetching pinned core $CORE_VERSION → $ASSET_URL"
-          echo "UPSTREAM_VERSION=$CORE_VERSION" >> "$GITHUB_ENV"
+      - name: Check workflow pins (no floating inputs)
+        run: bash scripts/check-pins.sh
 
-          curl -sfL "$ASSET_URL" -o trueseal-sync-android.zip
+      # ── Fetch pre-built .so + Kotlin bindings via the single pinned path ──
 
-          echo "$CORE_ZIP_SHA256  trueseal-sync-android.zip" | shasum -a 256 -c -
-
-          unzip -q trueseal-sync-android.zip -d _artifacts
-
-          mkdir -p \
-            lib/src/main/jniLibs/arm64-v8a \
-            lib/src/main/jniLibs/x86_64 \
-            lib/src/main/java/uniffi/trueseal_sync \
-            lib/src/main/java/uniffi/trueseal_noise
-
-          cp _artifacts/trueseal-android-staging/jniLibs/arm64-v8a/libtrueseal_sync.so  lib/src/main/jniLibs/arm64-v8a/
-          cp _artifacts/trueseal-android-staging/jniLibs/x86_64/libtrueseal_sync.so     lib/src/main/jniLibs/x86_64/
-          cp _artifacts/trueseal-android-staging/kotlin/uniffi/trueseal_sync/trueseal_sync.kt   lib/src/main/java/uniffi/trueseal_sync/
-          cp _artifacts/trueseal-android-staging/kotlin/uniffi/trueseal_noise/trueseal_noise.kt lib/src/main/java/uniffi/trueseal_noise/
-
-          python3 .github/scripts/patch_uniffi.py
+      # The pin (exact version + SHA-256) lives in scripts/fetch-core-artifacts.sh;
+      # check-pins.sh fails the build on any other fetch path or a floating
+      # release reference (KOTLIN-3, #11).
+      - name: Download pinned trueseal-sync Android artifacts
+        run: bash scripts/fetch-core-artifacts.sh
 
       # ── Java / Android SDK ────────────────────────────────────────────────
 
