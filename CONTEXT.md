@@ -2,32 +2,34 @@
 
 ## What this is
 
-Android SDK for [trueseal-sync](../trueseal-sync). Wraps the Rust core (compiled to `.so` via UniFFI) in an idiomatic Kotlin API. Published as an Android AAR via JitPack.
+Android SDK for [trueseal-sync](../trueseal-sync). Wraps the Rust core (compiled to `.so` via UniFFI) in the canonical Kotlin `TrueSeal` API (sync ADR-0028). Published as an Android AAR (JitPack today; KOTLIN-1 moves it to Maven Central).
 
 ## Key decisions
 
-- **Pre-built `.so` committed to repo** — JitPack builds the AAR from committed native libs; consumers need no Rust toolchain.
-- **`scripts/build-android.sh`** — the single command that cross-compiles Rust → `.so` for `arm64-v8a` + `x86_64`, generates Kotlin bindings via `uniffi-bindgen`, and copies everything into the library module.
-- **Flow-based public API** — all callbacks from Rust are exposed as `kotlinx.coroutines.flow.Flow`.
+- **Canonical API (SDK-1, #4)** — the public type is `TrueSeal` in `dev.trueseal.sync`: `open` (string or typed Relay Address), `send→MessageId`, awaited one-shot `onMessage`, `onEvent`/`onDeliveryIssue`→`Subscription`, full pairing/membership, `close()`. Exactly 14 `TrueSealError` cases with canonical `code` strings matching the core's generated `shared-facts.json` — the G12 parity check compares those codes. The old `TruesealSyncClient` API is removed outright (the break is approved, ADR-0028).
+- **Core artifacts are pinned + gitignored** — the generated bindings and `.so` files are NOT committed; `scripts/fetch-core-artifacts.sh` (and CI) downloads the pinned core zip (exact version + SHA-256, G8) and applies `.github/scripts/patch_uniffi.py`. INTERIM: the zip comes from this repo's `core-v0.6.0` mirror prerelease (TRUESEAL_READ_TOKEN is expired); KOTLIN-3 (#11) owns the permanent pin story.
+- **`Storage.android(context)` is the only Android-specific entry point** — it resolves under `context.noBackupFilesDir` so Session State is excluded from Android Auto Backup by construction (ADR-0032). The JVM test lane (KOTLIN-2) compiles the same sources.
+- **State is StateFlow** — `status`, `me`, `members`, `connection` are held in lockstep with the core via an internal event listener + refresh after synchronous transitions (the ADR-0028 statusChanged mapping).
+- **UniFFI proc-macro mode** — no `.udl` file; bindings generated from the compiled dylib metadata. The patch fixes a duplicate `close()` (the canonical close is infallible — no `@Throws`) and the `message` param shadowing.
 - **Min SDK API 24** — covers ~97% of active Android devices.
-- **`Context` for storage** — `TruesealSyncClient` takes an Android `Context` and defaults storage to `context.filesDir/TruesealSync/`.
-- **UniFFI proc-macro mode** — no `.udl` file; bindings generated from the compiled dylib metadata.
 
 ## Layer map
 
 ```
-TruesealSyncClient          dev.trueseal.sync           ← public SDK
-CallbackBridges         dev.trueseal.sync.internal  ← internal, never public
-uniffi.trueseal_sync        (generated)             ← UniFFI Kotlin, never public
-libtrueseal_sync.so         jniLibs/{abi}/          ← compiled Rust
+TrueSeal + TrueSealError      dev.trueseal.sync           ← public SDK (canonical)
+Storage / Models              dev.trueseal.sync           ← public; Storage.android is the only android.* seam
+Bridges                       dev.trueseal.sync.internal  ← internal, never public
+uniffi.trueseal_sync          (generated, gitignored)     ← UniFFI Kotlin, never public
+libtrueseal_sync.so           jniLibs/{abi}/ (gitignored) ← compiled Rust
 ```
 
 ## Repo layout
 
 ```
 lib/src/main/
-  kotlin/dev/trueseal/sync/       ← idiomatic Kotlin wrapper
-  java/uniffi/                ← generated UniFFI bindings (committed)
-  jniLibs/{abi}/              ← pre-built .so files (committed)
-scripts/build-android.sh      ← regenerate bindings + .so files
+  kotlin/dev/trueseal/sync/       ← the canonical Kotlin wrapper + unit tests in src/test
+  java/uniffi/                ← generated UniFFI bindings (fetched, gitignored)
+  jniLibs/{abi}/              ← pre-built .so files (fetched, gitignored)
+scripts/fetch-core-artifacts.sh  ← pinned download + checksum + patch (local dev; CI mirrors it)
+scripts/build-android.sh        ← legacy local Rust build (KOTLIN-3 replaces with the pin)
 ```
