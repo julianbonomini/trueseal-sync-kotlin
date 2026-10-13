@@ -86,12 +86,36 @@ def die(msg: str) -> None:
 def assert_patched(path: str, kind: str) -> None:
     """Fail loudly at patch time if the codegen shape drifted, rather than
     leaving a silent no-op patch and a confusing compile error downstream
-    (SDK-1 review). Re-verified against the v0.6.0 bindings:
-      - fix 2 (`message` shadowing) is NOT dead: the noise bindings still
-        need it (2 occurrences pre-patch); the sync bindings have none.
-      - fix 3 (JoinRequest self-shadowing) applies to the sync bindings only.
+    (SDK-1 review; hardened in KOTLIN-3, #11).
+
+    Coverage, per fix:
+      - fix 1: RE-SCAN — any surviving base-class @Synchronized close() that
+        still has a Rust `close`() within the same class body is a miss, even
+        if the expected-override counts below happen to hold (they can't see
+        a swap in WHICH duplicate survived).
+      - fix 2: BOTH halves — the shadowing constructor param AND the old
+        getter body must be gone; the rawMessage rename must be present
+        (noise bindings).
+      - fix 3: the JoinRequest property type must be qualified (sync).
     """
     txt = Path(path).read_text()
+
+    # ── Fix 1 re-scan: no surviving base-class duplicate near a Rust close ──
+    throws_positions = [m.start() for m in THROWS_CLOSE.finditer(txt)]
+    for m in SYNC_CLOSE.finditer(txt):
+        ahead = [tp for tp in throws_positions if tp > m.start()]
+        if ahead and (min(ahead) - m.start()) < NEARBY_THRESHOLD:
+            die(
+                f"fix 1 missed a base-class @Synchronized close() in {path} "
+                "(a Rust `close`() lives within the same class body)"
+            )
+
+    # ── Fix 2, both halves ─────────────────────────────────────────────────
+    if "val `message`: kotlin.String" in txt:
+        die(f"{path} still declares the shadowing `message` param")
+    if re.search(r'get\(\) = "message=\$\{ `message` \}"', txt):
+        die(f"fix 2 getter rename did not land in {path} (old getter body survives)")
+
     if kind == "sync":
         if "val `request`: uniffi.trueseal_sync.JoinRequest) : TrueSealEvent()" not in txt:
             die("fix 3 did not land in trueseal_sync.kt (JoinRequest not qualified)")
@@ -102,8 +126,6 @@ def assert_patched(path: str, kind: str) -> None:
                 "(expected exactly 1 — TrueSeal's; a surviving base-class duplicate means fix 1 missed)"
             )
     if kind == "noise":
-        if "val `message`: kotlin.String" in txt:
-            die("fix 2 did not land in trueseal_noise.kt (`message` param still shadows)")
         if "rawMessage" not in txt:
             die("fix 2 did not land in trueseal_noise.kt (no rawMessage rename found)")
         close_overrides = txt.count("override fun `close`()")
@@ -112,9 +134,6 @@ def assert_patched(path: str, kind: str) -> None:
                 f"trueseal_noise.kt has {close_overrides} override `close`() after patching "
                 "(expected exactly 2 — SessionNk + SessionXx)"
             )
-    # Both files: the shadowing param must be gone everywhere.
-    if "val `message`: kotlin.String" in txt:
-        die(f"{path} still declares the shadowing `message` param")
 
 
 NOISE = "lib/src/main/java/uniffi/trueseal_noise/trueseal_noise.kt"
