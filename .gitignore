@@ -13,6 +13,10 @@ local.properties
 lib/src/main/jniLibs/**/*.so
 lib/src/main/java/uniffi/**/*.kt
 
+# KOTLIN-2 JVM test lane — the pinned Linux x64 core (fetch-core-artifacts.sh --linux).
+jvm-test/native/
+jvm-test/build/
+
 # macOS
 .DS_Store
 
@@ -21,3 +25,4 @@ lib/src/main/java/uniffi/**/*.kt
 
 # Rust build artefacts (never committed — live in CARGO_TARGET_DIR)
 /target/
+
