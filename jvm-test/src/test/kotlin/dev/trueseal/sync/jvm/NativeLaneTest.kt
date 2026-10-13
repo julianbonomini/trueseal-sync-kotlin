@@ -51,12 +51,32 @@ class NativeLaneTest {
 
     @Test
     fun `info and limits come from the pinned core`() {
+        // ADR alarms: the pinned core reports the ADR values (0022 versions
+        // fixed at 1, 0025's 61,440, 0027's 32) and the lockstep release
+        // version (ADR-0030 — this alarm updates with each release pin).
         val info = TrueSeal.info
         assertEquals("0.6.0", info.sdkVersion)
         assertEquals(1L, info.transportVersion.toLong())
         assertEquals(1L, info.endToEndVersion.toLong())
         assertEquals(61_440L, TrueSeal.maxPayloadBytes.toLong())
         assertEquals(32L, TrueSeal.maxGroupSize.toLong())
+    }
+
+    @Test
+    fun `public statics are the FFI values, not SDK-side copies`() {
+        // SDK-3 (#6) provenance: the public surface is a pass-through from
+        // the linked core (truesealInfo / truesealMaxPayloadBytes /
+        // truesealMaxGroupSize in the generated bindings) — never a
+        // hand-maintained SDK literal (guarded in CI by
+        // scripts/check-no-literal-limits.sh). A second, direct FFI call
+        // must agree field-for-field with what the public API returned.
+        val publicInfo = TrueSeal.info
+        val ffiInfo = uniffi.trueseal_sync.truesealInfo()
+        assertEquals(ffiInfo.sdkVersion, publicInfo.sdkVersion)
+        assertEquals(ffiInfo.transportVersion, publicInfo.transportVersion)
+        assertEquals(ffiInfo.endToEndVersion, publicInfo.endToEndVersion)
+        assertEquals(uniffi.trueseal_sync.truesealMaxPayloadBytes(), TrueSeal.maxPayloadBytes)
+        assertEquals(uniffi.trueseal_sync.truesealMaxGroupSize(), TrueSeal.maxGroupSize)
     }
 
     @Test

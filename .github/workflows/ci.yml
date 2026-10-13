@@ -22,6 +22,10 @@ jobs:
       - name: Check workflow pins (no floating inputs)
         run: bash scripts/check-pins.sh
 
+      # ── SDK-3 (#6): no hand-written version/limit literals in SDK sources ──
+      - name: Check no literal limits in SDK sources
+        run: bash scripts/check-no-literal-limits.sh
+
       # ── Fetch pre-built .so + Kotlin bindings via the single pinned path ──
 
       # The pin (exact version + SHA-256) lives in scripts/fetch-core-artifacts.sh;
@@ -63,6 +67,9 @@ jobs:
 
       - name: Check :jvm-test stays test-only (no publication)
         run: bash scripts/check-jvm-test-only.sh
+
+      - name: Check no literal limits in SDK sources
+        run: bash scripts/check-no-literal-limits.sh
 
       # The UniFFI Kotlin bindings come from the Android zip; the lane loads
       # the pinned Linux x64 .so. Both through the single pinned fetch path.
