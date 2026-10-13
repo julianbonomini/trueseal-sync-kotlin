@@ -88,4 +88,17 @@ jobs:
       - name: Run the JVM lane (shared unit tests + native + driver protocol)
         env:
           TRUSEAL_JVM_LANE: require
+          # SDK-2 (G5): the vector-check report the Release Conductor
+          # attaches as Release Evidence.
+          TRUSEAL_VECTOR_REPORT: ${{ runner.temp }}/trueseal-g5-vectors-report.json
         run: ./gradlew :jvm-test:test
+
+      # SDK-2 (G5): uploaded even on failure so a red run keeps its record
+      # of which section failed (mirrors the Swift precedent, swift#13).
+      - name: Upload G5 vector report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: trueseal-g5-vectors-report
+          path: ${{ runner.temp }}/trueseal-g5-vectors-report.json
+          if-no-files-found: warn
