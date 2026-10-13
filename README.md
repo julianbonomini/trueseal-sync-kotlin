@@ -1,258 +1,152 @@
 # trueseal-sync-kotlin
 
-Android SDK for [trueseal-sync](https://trueseal.dev/docs/protocol/overview) — E2EE, local-first sync between devices. Device identity, pairing, encrypted delivery, and outbox replay. No accounts. No server-side keys.
+> **Developer Preview.** Every package is `0.x` and openly allowed to break — the API,
+> the wire format and stored data may change without notice. Each breaking release
+> carries upgrade steps. See the
+> [preview lifecycle](https://trueseal.dev/agents/developer-preview).
 
-**Android is the only supported Kotlin target.** The `:jvm-test` module is a test-only build of the same sources for the headless e2e lanes ([jvm-test/README.md](jvm-test/README.md)) — it is never published and plain JVM stays unsupported.
+The Android SDK for [TrueSeal](https://trueseal.dev) — end-to-end encrypted,
+local-first sync between a group of devices. No accounts. The relay can't read or
+forge messages; [here is exactly what it does see](https://trueseal.dev/agents/threat-model).
 
-[![JitPack](https://jitpack.io/v/julianbonomini/trueseal-sync-kotlin.svg)](https://jitpack.io/#julianbonomini/trueseal-sync-kotlin)
+Idiomatic Kotlin surface over the Rust core
+([trueseal-sync](https://github.com/julianbonomini/trueseal-sync)) — coroutines,
+StateFlows, no FFI types.
 
-For architecture, protocol semantics, and integration patterns see the **[trueseal-sync integration guide](https://trueseal.dev/docs/guides/integrating-trueseal-sync)**.
+**Platforms:** Android (API 24+) · Kotlin · Coroutines. **Android is the only
+supported Kotlin target** — the `:jvm-test` module is a test-only build of the same
+sources for the headless e2e lanes and is never published.
 
 ---
 
 ## Install
 
 ```kotlin
-// settings.gradle.kts
-dependencyResolutionManagement {
-    repositories {
-        google()
-        mavenCentral()
-        maven("https://jitpack.io")
-    }
-}
-```
-
-```kotlin
 // app/build.gradle.kts
 dependencies {
-    implementation("com.github.julianbonomini:trueseal-sync-kotlin:<version>")
+    implementation("dev.trueseal:trueseal-sync:0.6.0")
 }
 ```
 
-No Rust toolchain needed — pre-built `.so` files (`arm64-v8a`, `x86_64`) are bundled in the AAR.
-
-**Requirements:** API 24+ · Kotlin 1.9+ · Coroutines
+The Maven Central coordinates above are the stable API for installing — the Central
+publish itself is landing (tracked as
+[KOTLIN-1](https://github.com/julianbonomini/trueseal-sync-kotlin/issues/9)). Until
+it does, download the AAR and its `.sha256` from the
+[GitHub Release](https://github.com/julianbonomini/trueseal-sync-kotlin/releases)
+and add the AAR as a local module. No Rust toolchain is needed either way: the
+native core ships inside the AAR (`arm64-v8a`, `x86_64`).
 
 ---
 
-## Initialise
+## Open
+
+You need a relay — a server that routes encrypted blobs between devices. One Relay
+Address string carries its key, host and both ports; the relay CLI prints it
+(`trueseal-relay address --host relay.example.com`). To run one, see
+[self-hosting](https://trueseal.dev/agents/running-a-relay).
 
 ```kotlin
-val client = TruesealSyncClient(
-    context        = applicationContext,
-    relayHost      = "relay.example.com",               // your trueseal-relay host
-    relayPublicKey = hexToBytes("..."),                  // relay's 32-byte X25519 pubkey
-    namespace      = "myapp",                            // scope to your app; see note below
+import dev.trueseal.sync.Storage
+import dev.trueseal.sync.TrueSeal
+
+// open is suspend — call it from a coroutine
+val ts = TrueSeal.open(
+    relay = "trueseal://<relay public key hex>@relay.example.com",
+    storage = Storage.android(applicationContext),
 )
 ```
 
-`relayHost` and `relayPublicKey` are build-time constants — not user-configurable.
-See [how to get the relay public key](https://trueseal.dev/docs/guides/integrating-trueseal-sync#relay-public-key).
-
-**`namespace`:** always pass an explicit value scoped to your app (`"com.example.myapp"`).
-The default is `"default"` — fine for a single app, wrong if multiple apps share the device.
-
-**Init failure is fatal.** A thrown `TruesealSyncError` at construction means bad arguments or corrupt storage. Do not catch and retry — surface it as a crash or show an unrecoverable error screen.
+Session State lives under `storage` (excluded from backups; data at rest is
+protected by the OS sandbox). `open` returns before the connection is up — the
+outbox queues and replays once the relay is reachable. State is observable as
+StateFlows: `ts.status`, `ts.me`, `ts.members`, `ts.connection`.
 
 ---
 
-## Startup
+## Pair two devices
 
-Seed local state from the persisted snapshot *before* collecting flows — this prevents a momentary empty member list on cold start:
+Devices sync within a group. You bootstrap the group by pairing: one device opens a
+window and hands over a token; the other joins with it; the first accepts. The token
+carries a single-use secret — it does not expire on a timer; the window closes when
+the device cancels it or accepts a join.
+
+**Device A** — open the pairing window and get a token (show it as a QR code, send
+via a share sheet, etc.):
 
 ```kotlin
-// In your ViewModel or Application class:
-
-// 1. Snapshot existing group members from persisted state
-val initialMembers = client.members          // excludes local device; empty until first pair
-val localId        = client.localNodeId
-val localName      = client.localDeviceName
-
-// 2. Then attach Flow collectors
-client.memberEvents
-    .onEach { event -> /* update your state */ }
-    .launchIn(viewModelScope)
-
-client.blobs
-    .onEach { blob -> handleIncoming(blob) }
-    .launchIn(viewModelScope)
-
-client.connectionState
-    .onEach { state -> updateRelayIndicator(state) }
-    .launchIn(viewModelScope)
+val token = tsA.startPairing()
 ```
 
-Flows complete when `destroyGroup()` is called or `close()` is invoked.
-
----
-
-## Pairing
-
-Pairing is a two-device ceremony. One device generates a token (QR code, share sheet, etc.); the other scans it.
+**Device B** — join with the token (status becomes `pendingJoin` until the first
+manifest arrives):
 
 ```kotlin
-// ── Device A (host) ───────────────────────────────────────────────────────────
+tsB.join(token)
+```
 
-// Generate a token — stable for the keypair lifetime, safe to show in a QR.
-val token = clientA.generatePairingToken()
+**Device A** — the request arrives as an event; accept it. Listeners must return
+promptly and never call back into the object synchronously — dispatch instead:
 
-// Accept incoming requests (do this before sharing the token)
-clientA.pairingRequests
-    .onEach { request ->
-        // Show request.deviceName to the user, then:
-        clientA.acceptPairingRequest(request)
-        clientA.cancelPairing()             // single-use: close window after accepting
+```kotlin
+val sub = tsA.onEvent { event ->
+    if (event is TrueSealEvent.JoinRequestReceived) {
+        Log.i("TrueSeal", "Join request from ${event.request.name}")
+        scope.launch { tsA.accept(event.request.id) }
     }
-    .launchIn(viewModelScope)
-
-
-// ── Device B (joiner) ─────────────────────────────────────────────────────────
-
-clientB.joinGroup(token)                    // throws TruesealSyncError.InvalidPairingToken if bad
-```
-
-After `acceptPairingRequest`, both devices receive `MemberEvent.Joined` with the new member's ID and name.
-
-Call `cancelPairing()` when the pairing UI closes, even if no request arrived. It is idempotent.
-
----
-
-## Publish / receive
-
-```kotlin
-// Send to all group members — queues to outbox if relay is offline.
-client.publish("hello".toByteArray())
-client.publish("hello")                     // UTF-8 convenience overload
-
-// Receive
-client.blobs
-    .onEach { blob ->
-        val text = blob.text                // null if payload is not valid UTF-8
-        val from = blob.senderPublicKey     // sender's 32-byte X25519 pubkey (stable ID)
-        val id = blob.messageId             // stable across re-delivery
-    }
-    .launchIn(viewModelScope)
-```
-
-**Delivery is at least once.** Persist `blob.messageId` in the same transaction as your application update. Ignore the blob when that opaque ID already exists.
-
----
-
-## Membership
-
-```kotlin
-// Snapshot — excludes the local device.
-val members: List<SyncMember> = client.members   // each access is an FFI call; cache if needed
-
-// Remove a member (soft removal — no key rotation).
-// The removed device fires MemberEvent.RemovedSelf.
-client.removeMember(members.first { it.name == "AmberFalcon" })
-
-// Observe changes
-client.memberEvents.onEach { event ->
-    when (event) {
-        is MemberEvent.Joined        -> { /* event.member: SyncMember */ }
-        is MemberEvent.Left          -> { /* event.member: SyncMember */ }
-        is MemberEvent.RemovedSelf   -> { /* this device was kicked; re-init */ }
-        is MemberEvent.GroupDestroyed -> { /* full wipe; re-init */ }
-    }
-}.launchIn(viewModelScope)
-```
-
-Re-snapshot from `client.members` on every event rather than patching a local list — this avoids missing events from race conditions.
-
----
-
-## Destroy group
-
-Destroy is a **security primitive** (compromised device, fresh start), not a routine "leave":
-
-```kotlin
-client.destroyGroup()
-// Sends Revoke to all members. Every device receives MemberEvent.GroupDestroyed.
-// All Flows complete. Call close() and reinitialise with a new TruesealSyncClient.
-```
-
-There is no "leave quietly" protocol — see the [integration guide §9](https://trueseal.dev/docs/guides/integrating-trueseal-sync#9-group-exit) for the workaround.
-
----
-
-## Error handling
-
-All errors are `TruesealSyncError` — a sealed class extending `Exception`:
-
-| Variant | When |
-|---|---|
-| `InvalidRelayPublicKey` | Key is not exactly 32 bytes |
-| `InvalidNamespace` | Namespace contains illegal characters |
-| `InvalidPairingToken` | Token is malformed |
-| `NotInGroup` | Operation requires a paired group |
-| `MemberNotFound` | `removeMember` target is not in the manifest |
-| `PushFailed` | Relay push failed — blob is queued in outbox, **do not retry** |
-| `GroupDestroyed` | Session is terminal — reinitialise |
-
-```kotlin
-try {
-    client.publish(payload)
-} catch (e: TruesealSyncError.PushFailed) {
-    // Blob is already in the outbox. No action needed.
-} catch (e: TruesealSyncError.NotInGroup) {
-    // Guide user through pairing first.
-} catch (e: TruesealSyncError) {
-    Log.e("TruesealSync", e.message)
 }
 ```
 
----
-
-## Lifecycle
-
-`TruesealSyncClient` implements `Closeable`. Close it to stop background tasks and complete all Flows.
-
-```kotlin
-// Activity / Fragment
-override fun onDestroy() {
-    super.onDestroy()
-    client.close()
-}
-```
-
-```kotlin
-// Scoped usage
-TruesealSyncClient(context, relayHost, relayPublicKey).use { client ->
-    client.publish("hello")
-}
-```
-
-`close()` is safe to call after `destroyGroup()`.
+After `accept`, both devices are members and can send and receive. Close the window
+with `cancelPairing()` if the user backs out — unaccepted requests disappear with it.
 
 ---
 
-## Build from source
+## Send & receive
 
-Requires a Rust toolchain, Android NDK, and sibling repos at the same level:
+```kotlin
+// Send — returns the Message ID once durably queued (throws typed errors while
+// not a member, or over the 61,440-byte limit)
+val messageId = ts.send("hello".encodeToByteArray())
 
-```
-trueseal/
-  trueseal-noise/
-  trueseal-sync/
-  trueseal-sync-kotlin/
-```
-
-```bash
-rustup target add aarch64-linux-android x86_64-linux-android
-cargo install cargo-ndk
-bash scripts/build-android.sh
+// Receive — one awaited handler per object; registering it starts receiving
+val sub = ts.onMessage { message ->
+    println(message.body.decodeToString())
+    println(message.from.name)   // sender, same id as in ts.members
+    println(message.id)          // stable tsm1_… id; the library deduplicates
+}
 ```
 
-Commit `lib/src/main/jniLibs/` and `lib/src/main/java/uniffi/` after running — JitPack builds from committed artefacts.
+Delivery is at least once, in per-sender order. The message is acked only after your
+handler completes — a throw retries (5 attempts, then a `handlerGaveUp` delivery
+issue). The library deduplicates on `message.id`, but a crash mid-handling can
+deliver a message twice — persist `message.id` alongside your own state if your
+handler isn't naturally idempotent. The handler may suspend (the core awaits it) but
+must not park forever: a handler parked past the core's liveness window (~75 s)
+tears the session down around it. The same rule applies to `onEvent` /
+`onDeliveryIssue` listeners, which share one FFI listener bus: return promptly and
+dispatch to a coroutine — never block inside a listener, and never call back into
+the object synchronously from one.
 
-**Release:** tag and push. The [release workflow](.github/workflows/release.yml) rebuilds native libs, assembles the AAR, and publishes to GitHub Releases.
+Call `ts.close()` when you're done — it stops the connection and handlers, keeping
+Session State; every later call fails with `TrueSealError.Closed`.
 
-```bash
-git tag v0.1.1 && git push origin v0.1.1
-```
+---
+
+## Reference
+
+This README is a quickstart. The full reference lives in the docs:
+
+- **[Human Docs](https://trueseal.dev/docs/integrate/integrating-trueseal-sync)** —
+  integrating TrueSeal, pairing, membership, sending and receiving, errors and events
+- **[Agent Docs: SDK API reference](https://trueseal.dev/agents/api)** — every public
+  type, method, error case and limit, canonical across all three SDKs (paste-friendly
+  for coding agents; the [Agent Docs tree](https://trueseal.dev/agents/) has the rest)
+- **[Threat Model](https://trueseal.dev/agents/threat-model)** — every security claim,
+  the tests that prove it, and the limitations
+- **[Developer Preview lifecycle](https://trueseal.dev/agents/developer-preview)** —
+  version rules and upgrade notes
+
+Security reports: see [SECURITY.md](SECURITY.md).
 
 ---
 
