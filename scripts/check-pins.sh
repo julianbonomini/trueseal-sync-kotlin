@@ -32,7 +32,7 @@ for wf in "$REPO_ROOT"/.github/workflows/*.yml "$REPO_ROOT"/.github/workflows/*.
         FAILED=1
     fi
 
-    if grep -q "trueseal-sync-android" "$wf" && ! grep -q "scripts/fetch-core-artifacts.sh" "$wf"; then
+    if grep -qE "trueseal-sync-android|trueseal-sync-linux-x64" "$wf" && ! grep -q "scripts/fetch-core-artifacts.sh" "$wf"; then
         echo "✗ $name: touches the core artifacts without scripts/fetch-core-artifacts.sh (inline fetch copies drift)" >&2
         FAILED=1
     fi

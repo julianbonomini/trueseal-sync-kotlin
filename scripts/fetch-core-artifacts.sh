@@ -21,7 +21,9 @@
 # flip the default CORE_ASSET_BASE_URL below to the upstream URL in the
 # comment — the pin and the checksum verification do not change.
 #
-# Usage: bash scripts/fetch-core-artifacts.sh
+# Usage: bash scripts/fetch-core-artifacts.sh           (Android AAR lane)
+#        bash scripts/fetch-core-artifacts.sh --linux   (KOTLIN-2 JVM test lane:
+#                                                        the Linux x64 core .so)
 # Override (Release Conductor / SDK-4): CORE_ASSET_BASE_URL=<url> bash ...
 
 set -euo pipefail
@@ -29,13 +31,47 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
-# ── The pin (G8: exact version + checksum — never releases/latest) ────────
+# ── The pins (G8: exact version + checksum — never releases/latest) ───────
 CORE_VERSION="v0.6.0"
 CORE_ZIP_SHA256="37faff4678f426162e908c06e3c05fec329b8f7c2320247c886d3b6f54aa115d"
+# The Linux x64 core library for the KOTLIN-2 JVM test lane (sync#114/B19).
+CORE_LINUX_ZIP_SHA256="ca0b80e54a21f02651955b60697e6bf570bd9894899ca63686f92116469af851"
 
 # ── Transport (see the header; flip the default once A6 lands) ────────────
 # Upstream: https://github.com/julianbonomini/trueseal-sync/releases/download/${CORE_VERSION}
 CORE_ASSET_BASE_URL="${CORE_ASSET_BASE_URL:-https://github.com/julianbonomini/trueseal-sync-kotlin/releases/download/core-${CORE_VERSION}}"
+
+# ── KOTLIN-2: the Linux x64 core library for the JVM test lane ────────────
+# The lane compiles the same Kotlin sources (the UniFFI bindings come from
+# the Android zip above — run the default mode too) and loads THIS .so via
+# JNA. Test-only: the .so lands in jvm-test/native/ (gitignored) and is
+# never part of the published AAR.
+if [[ "${1:-}" == "--linux" ]]; then
+    ASSET_URL="${CORE_ASSET_BASE_URL}/trueseal-sync-linux-x64-${CORE_VERSION}.zip"
+    WORK="$(mktemp -d)"
+    trap 'rm -rf "$WORK"' EXIT
+
+    echo "▶  Downloading pinned trueseal-sync ${CORE_VERSION} Linux x64 core"
+    echo "   $ASSET_URL"
+    curl -sfL "$ASSET_URL" -o "$WORK/core-linux.zip"
+
+    echo "▶  Verifying checksum (pinned: $CORE_LINUX_ZIP_SHA256)"
+    ACTUAL="$(shasum -a 256 "$WORK/core-linux.zip" | awk '{print $1}')"
+    if [[ "$ACTUAL" != "$CORE_LINUX_ZIP_SHA256" ]]; then
+        echo "CHECKSUM MISMATCH: expected $CORE_LINUX_ZIP_SHA256, got $ACTUAL" >&2
+        exit 1
+    fi
+
+    echo "▶  Verifying the zip against the upstream-published .sha256"
+    unzip -q "$WORK/core-linux.zip" -d "$WORK/x"
+    test -f "$WORK/x/libtrueseal_sync.so" || { echo "zip has no libtrueseal_sync.so at root" >&2; exit 1; }
+
+    mkdir -p "$REPO_ROOT/jvm-test/native"
+    cp "$WORK/x/libtrueseal_sync.so" "$REPO_ROOT/jvm-test/native/"
+    echo "✓  Linux x64 core ${CORE_VERSION} at jvm-test/native/libtrueseal_sync.so"
+    exit 0
+fi
+
 ASSET_URL="${CORE_ASSET_BASE_URL}/trueseal-sync-android-${CORE_VERSION}.zip"
 
 WORK="$(mktemp -d)"
