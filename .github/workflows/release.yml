@@ -1,42 +1,102 @@
-name: Release AAR
+name: Release (candidate)
 
-# Triggered by a version tag, e.g.: git tag v0.4.1 && git push origin v0.4.1
+# SDK-4 / e2e ADR-0002: this is the CANDIDATE build. It is dispatch-only —
+# pushing a tag triggers NOTHING, and the tag v<version> is created exactly
+# once, at promotion (promote.yml), on the commit this workflow built.
+# Tags are never moved (sync ADR-0030). The old tag-triggered flow that
+# force-added .so files and force-moved the tag is gone (JitPack is
+# superseded by Maven Central — KOTLIN-1 / D15).
+#
+#   candidate:  gh workflow run release.yml -f version=0.6.0 [-f dry_run=true]
+#   promote:    (promote.yml) verify the staged bytes, create the immutable
+#               tag, publish the draft — same bytes, no rebuild.
+#
+# D15 SEAM (KOTLIN-1, Maven Central): Central bundles are SIGNED at
+# candidate time and uploaded only at promotion (e2e ADR-0002 step 2, and
+# issue #7). The signing/publish machinery lands with D15 (it needs the
+# project GPG key — maintainer item A3); the marked steps below are where
+# it plugs in. Until then the staged artifact is the unsigned AAR +
+# checksums, and the draft release is the gate's test target.
+
 on:
-  push:
-    tags:
-      - 'v[0-9]*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "SDK release version without the v prefix (lockstep TrueSeal Release, e.g. 0.6.0)"
+        required: true
+        type: string
+      dry_run:
+        description: "Build, test and checksum only — no draft release"
+        required: false
+        type: boolean
+        default: false
+      # Conductor override (e2e ADR-0002 step 4): the Release Conductor may
+      # build this SDK's candidate against a core CANDIDATE instead of the
+      # committed pin in scripts/fetch-core-artifacts.sh. All three fields
+      # must be given together; when omitted the committed pin is used.
+      # The checksum is still verified — an override changes WHICH pinned
+      # bytes, never WHETHER the bytes are pinned.
+      core_version:
+        description: "Override core version, e.g. v0.6.0 (default: the committed pin)"
+        required: false
+        type: string
+        default: ""
+      core_zip_sha256:
+        description: "sha256 of the overridden core Android zip (required with core_version)"
+        required: false
+        type: string
+        default: ""
+      core_asset_base_url:
+        description: "Base URL hosting the overridden core zip (required with core_version)"
+        required: false
+        type: string
+        default: ""
 
 permissions:
   contents: write
 
 jobs:
-  release:
-    name: Build & publish AAR
+  candidate:
+    name: Build & stage candidate AAR
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        with:
-          # Full history + tags so we can move the tag after committing artifacts
-          fetch-depth: 0
-          token: ${{ secrets.GITHUB_TOKEN }}
 
-      # ── G8 pin guard (KOTLIN-3, #11) ──────────────────────────────────────
+      - name: Validate version input
+        run: |
+          echo "${{ inputs.version }}" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+$' \
+            || { echo "::error::version must be X.Y.Z without a v prefix"; exit 1; }
 
-      - name: Check workflow pins (no floating inputs)
+      # G8 pin guard: no floating inputs, single fetch path.
+      - name: Check workflow pins
         run: bash scripts/check-pins.sh
 
-      # ── Fetch pre-built .so + Kotlin bindings via the single pinned path ──
+      - name: Resolve the effective core pin
+        env:
+          OVERRIDE_VERSION: ${{ inputs.core_version }}
+          OVERRIDE_SHA: ${{ inputs.core_zip_sha256 }}
+          OVERRIDE_URL: ${{ inputs.core_asset_base_url }}
+        run: |
+          if [ -n "$OVERRIDE_VERSION" ]; then
+            [ -n "$OVERRIDE_SHA" ] && [ -n "$OVERRIDE_URL" ] \
+              || { echo "::error::core_version requires core_zip_sha256 AND core_asset_base_url — an override is still an exact pin (G8)"; exit 1; }
+            echo "$OVERRIDE_SHA" | grep -qE '^[0-9a-f]{64}$' \
+              || { echo "::error::core_zip_sha256 must be 64 lowercase hex chars"; exit 1; }
+            echo "CORE_VERSION=$OVERRIDE_VERSION" >> "$GITHUB_ENV"
+            echo "CORE_ZIP_SHA256=$OVERRIDE_SHA" >> "$GITHUB_ENV"
+            echo "CORE_ASSET_BASE_URL=$OVERRIDE_URL" >> "$GITHUB_ENV"
+            echo "conductor override: core $OVERRIDE_VERSION @ $OVERRIDE_SHA"
+          else
+            echo "committed pin (scripts/fetch-core-artifacts.sh defaults)"
+          fi
 
-      # The pin (exact version + SHA-256) lives in scripts/fetch-core-artifacts.sh;
-      # the old floating latest-release lookup and the expired TRUESEAL_READ_TOKEN
-      # dependency are gone (KOTLIN-3, #11). UPSTREAM_VERSION is exported by
-      # the script for the release notes below.
+      # Fetch + checksum-verify the pinned core artifacts via the single
+      # pinned path (KOTLIN-3). The override env, when set, is consumed
+      # here; otherwise the committed pin applies.
       - name: Download pinned trueseal-sync Android artifacts
         run: bash scripts/fetch-core-artifacts.sh
-
-      # ── Java / Android SDK ────────────────────────────────────────────────
 
       - name: Set up JDK 17
         uses: actions/setup-java@v4
@@ -44,53 +104,59 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      # ── Assemble AAR ──────────────────────────────────────────────────────
+      - name: Run unit tests
+        run: ./gradlew :lib:testReleaseUnitTest
 
-      - name: Set VERSION_NAME from tag
-        run: echo "VERSION_NAME=${GITHUB_REF_NAME#v}" >> "$GITHUB_ENV"
-
+      # D15 SEAM: sign the Maven bundle here (candidate-time signing per
+      # e2e ADR-0002 step 2 / issue #7) once the GPG key exists (A3).
       - name: Assemble release AAR
-        run: ./gradlew :lib:assembleRelease -PVERSION_NAME="$VERSION_NAME"
+        run: ./gradlew :lib:assembleRelease -PVERSION_NAME="${{ inputs.version }}"
 
-      # ── Commit artifacts so JitPack can build the AAR from this tag ───────
-      # JitPack builds from the tagged commit; .so + bindings must be present.
-      # We force-add (bypassing .gitignore), commit, then move the tag here.
-
-      - name: Commit native libs + UniFFI bindings
+      - name: Checksum the AAR
+        id: aar
         run: |
-          git config user.name  "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
+          AAR="lib/build/outputs/aar/lib-release.aar"
+          STAGED="trueseal-sync-kotlin-${{ inputs.version }}.aar"
+          cp "$AAR" "$STAGED"
+          echo "name=$STAGED" >> "$GITHUB_OUTPUT"
+          echo "sha256=$(shasum -a 256 "$STAGED" | awk '{print $1}')" >> "$GITHUB_OUTPUT"
 
-          # Force-add so .gitignore exclusions don't block us
-          git add --force \
-            lib/src/main/jniLibs/arm64-v8a/libtrueseal_sync.so \
-            lib/src/main/jniLibs/x86_64/libtrueseal_sync.so \
-            lib/src/main/java/uniffi/trueseal_sync/trueseal_sync.kt \
-            lib/src/main/java/uniffi/trueseal_noise/trueseal_noise.kt
+      - name: Stage the draft candidate release
+        if: ${{ !inputs.dry_run }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -e
+          TAG="v${{ inputs.version }}"
+          AAR="${{ steps.aar.outputs.name }}"
+          SHA="${{ steps.aar.outputs.sha256 }}"
 
-          git diff --cached --quiet && {
-            echo "No artifact changes — skipping commit."
-          } || {
-            git commit -m "chore: native libs + UniFFI bindings for ${GITHUB_REF_NAME} (upstream trueseal-sync ${UPSTREAM_VERSION}) [skip ci]"
-            # Move the tag to the new commit so JitPack sees the artifacts
-            git tag -f "${GITHUB_REF_NAME}"
-            git push origin HEAD:main
-            git push origin "${GITHUB_REF_NAME}" --force
-          }
+          # A candidate is staged once per version: refuse to stage over an
+          # existing release for the tag (published OR staged) — re-running
+          # a candidate for a burned version is how byte drift sneaks in.
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "::error::a release $TAG already exists — a candidate is staged once per version (promotion never rebuilds)"
+            exit 1
+          fi
+          if git ls-remote --tags origin "$TAG" | grep -q "$TAG"; then
+            echo "::error::tag $TAG already exists on origin — tags are never moved (ADR-0030)"
+            exit 1
+          fi
 
-      # ── GitHub Release ────────────────────────────────────────────────────
+          echo "$SHA  $AAR" > "$AAR.sha256"
+          cat > /tmp/candidate-notes.md <<EOF
+          Candidate for the TrueSeal ${{ inputs.version }} lockstep release.
 
-      - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
-        with:
-          files: lib/build/outputs/aar/lib-release.aar
-          fail_on_unmatched_files: true
-          body: |
-            ## trueseal-sync-kotlin ${{ github.ref_name }}
+          - **core**: trueseal-sync ${UPSTREAM_VERSION:-unknown} (checksum-pinned via scripts/fetch-core-artifacts.sh)
+          - **AAR sha256**: \`$SHA\`
+          - **built from commit**: ${{ github.sha }}
 
-            Built against **trueseal-sync ${{ env.UPSTREAM_VERSION }}**.
-
-            ### JitPack
-            ```gradle
-            implementation("com.github.julianbonomini:trueseal-sync-kotlin:${{ github.ref_name }}")
-            ```
+          Promotion (promote.yml) verifies these bytes, creates the immutable tag \`$TAG\` on ${{ github.sha }}, and publishes this draft — same bytes, no rebuild (e2e ADR-0002). Maven Central upload plugs in at promotion once KOTLIN-1 (D15) lands.
+          EOF
+          gh release create "$TAG" \
+            --draft --prerelease \
+            --title "TrueSeal ${{ inputs.version }} (candidate)" \
+            --notes-file /tmp/candidate-notes.md \
+            --target "${{ github.sha }}" \
+            "$AAR" "$AAR.sha256"
+          echo "staged draft $TAG on ${{ github.sha }}"

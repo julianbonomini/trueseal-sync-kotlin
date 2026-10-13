@@ -32,10 +32,16 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
 # ── The pins (G8: exact version + checksum — never releases/latest) ───────
-CORE_VERSION="v0.6.0"
-CORE_ZIP_SHA256="37faff4678f426162e908c06e3c05fec329b8f7c2320247c886d3b6f54aa115d"
+# The DEFAULTS below are the committed pin. The env overrides exist for the
+# Release Conductor (e2e ADR-0002 step 4): it may build this SDK's candidate
+# against a core CANDIDATE (CORE_VERSION + CORE_ZIP_SHA256 +
+# CORE_ASSET_BASE_URL together) — an override changes WHICH pinned bytes,
+# never WHETHER the bytes are pinned. CI and local builds use the committed
+# defaults; check-pins.sh still rejects any floating reference.
+CORE_VERSION="${CORE_VERSION:-v0.6.0}"
+CORE_ZIP_SHA256="${CORE_ZIP_SHA256:-37faff4678f426162e908c06e3c05fec329b8f7c2320247c886d3b6f54aa115d}"
 # The Linux x64 core library for the KOTLIN-2 JVM test lane (sync#114/B19).
-CORE_LINUX_ZIP_SHA256="ca0b80e54a21f02651955b60697e6bf570bd9894899ca63686f92116469af851"
+CORE_LINUX_ZIP_SHA256="${CORE_LINUX_ZIP_SHA256:-ca0b80e54a21f02651955b60697e6bf570bd9894899ca63686f92116469af851}"
 
 # ── Transport (see the header; flip the default once A6 lands) ────────────
 # Upstream: https://github.com/julianbonomini/trueseal-sync/releases/download/${CORE_VERSION}

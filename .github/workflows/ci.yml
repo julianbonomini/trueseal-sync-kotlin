@@ -26,6 +26,31 @@ jobs:
       - name: Check no literal limits in SDK sources
         run: bash scripts/check-no-literal-limits.sh
 
+      # ── SDK-4 (#7): the G12 parity gate ─────────────────────────────────
+      # The canonical `code` strings of this SDK's public sum types vs the
+      # vendored, SHA-256-pinned copy of the core's generated shared-facts
+      # (see Parity/README.md). --self-test is the negative test G12
+      # requires: renamed/missing/extra fixtures must all be caught.
+      - name: Verify the vendored shared-facts pin
+        env:
+          SHARED_FACTS_SHA256: 159491b8a563c6928d564458c898e2c5e815e3e291091bc7e6342624031fe62a
+        run: |
+          ACTUAL=$(shasum -a 256 Parity/shared-facts.json | awk '{print $1}')
+          [ "$ACTUAL" = "$SHARED_FACTS_SHA256" ]             || { echo "::error::Parity/shared-facts.json drifted from its pin (see Parity/README.md)"; exit 1; }
+
+      - name: G12 parity check (+ negative self-test)
+        run: |
+          python3 scripts/check-parity.py --report "${{ runner.temp }}/trueseal-g12-parity-report.json"
+          python3 scripts/check-parity.py --self-test
+
+      - name: Upload G12 parity report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: trueseal-g12-parity-report
+          path: ${{ runner.temp }}/trueseal-g12-parity-report.json
+          if-no-files-found: warn
+
       # ── Fetch pre-built .so + Kotlin bindings via the single pinned path ──
 
       # The pin (exact version + SHA-256) lives in scripts/fetch-core-artifacts.sh;
