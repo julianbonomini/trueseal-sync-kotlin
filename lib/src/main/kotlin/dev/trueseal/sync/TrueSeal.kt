@@ -3,9 +3,11 @@ package dev.trueseal.sync
 import dev.trueseal.sync.internal.EventListenerBridge
 import dev.trueseal.sync.internal.IssueListenerBridge
 import dev.trueseal.sync.internal.MessageHandlerBridge
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import uniffi.trueseal_sync.Subscription as FfiSubscription
 import uniffi.trueseal_sync.TrueSeal as FfiTrueSeal
@@ -66,18 +68,35 @@ class TrueSeal private constructor(
     /**
      * Keeps the StateFlows in lockstep with the core. The core buffers
      * events raised before the first listener registers, so no transition
-     * is lost between [open] and this subscription. The bridge runs under
-     * the core's listener-bus lock — it only publishes to the flows and
-     * never calls back into the core.
+     * is lost between [open] and this subscription.
+     *
+     * Listeners fire under the core's listener-bus lock and must NOT
+     * re-enter the core (ffi.rs), so this listener only publishes event
+     * payloads to the flows. The one core read it needs — `me` after a
+     * status change (the identity may have rotated: removal, leave,
+     * Destroy Group) — is hopped OFF the listener thread and guarded:
+     * after [close], `me()` throws [TrueSealError.Closed], and a
+     * teardown-racing event (the identity-rotation settle thread can fire
+     * `statusChanged` seconds into teardown) must never make a listener
+     * throw into the FFI, which UniFFI turns into a core-thread panic.
+     * (Same shape as the Swift reference's `Task { @MainActor … try? }`
+     * hop.)
      */
     private val stateSubscription: Subscription = mapErrors {
         core.onEvent(
             EventListenerBridge { event ->
                 when (event) {
-                    is TrueSealEvent.StatusChanged -> synchronized(stateLock) {
-                        _status.value = event.status
-                        _me.value = mapErrors { core.me().toPublic() }
-                        if (event.status != GroupStatus.Member) _members.value = emptyList()
+                    is TrueSealEvent.StatusChanged -> {
+                        synchronized(stateLock) {
+                            _status.value = event.status
+                            if (event.status != GroupStatus.Member) _members.value = emptyList()
+                        }
+                        CoroutineScope(Dispatchers.Default).launch {
+                            runCatching { mapErrors { core.me().toPublic() } }
+                                .onSuccess { refreshed ->
+                                    synchronized(stateLock) { _me.value = refreshed }
+                                }
+                        }
                     }
                     is TrueSealEvent.MembersChanged -> synchronized(stateLock) {
                         _members.value = event.members
@@ -163,7 +182,9 @@ class TrueSeal private constructor(
      * liveness window (~75 s) tears the session down around it (ADR-0026's
      * best-effort dedup case). Dispatch to a coroutine asynchronously;
      * never block inside a listener, and never call back into this object
-     * synchronously from one.
+     * synchronously from one. A listener throw is contained at the FFI
+     * boundary (it can never panic the core thread) — but a throwing
+     * listener is an app bug; fix it rather than rely on containment.
      */
     @Throws(TrueSealError::class)
     fun onEvent(listener: (TrueSealEvent) -> Unit): Subscription =

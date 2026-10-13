@@ -79,5 +79,49 @@ def patch(path: str) -> None:
     print(f"patched: {path}")
 
 
-patch("lib/src/main/java/uniffi/trueseal_noise/trueseal_noise.kt")
-patch("lib/src/main/java/uniffi/trueseal_sync/trueseal_sync.kt")
+def die(msg: str) -> None:
+    raise SystemExit(f"patch_uniffi: {msg} — the generated bindings' shape changed; update this script")
+
+
+def assert_patched(path: str, kind: str) -> None:
+    """Fail loudly at patch time if the codegen shape drifted, rather than
+    leaving a silent no-op patch and a confusing compile error downstream
+    (SDK-1 review). Re-verified against the v0.6.0 bindings:
+      - fix 2 (`message` shadowing) is NOT dead: the noise bindings still
+        need it (2 occurrences pre-patch); the sync bindings have none.
+      - fix 3 (JoinRequest self-shadowing) applies to the sync bindings only.
+    """
+    txt = Path(path).read_text()
+    if kind == "sync":
+        if "val `request`: uniffi.trueseal_sync.JoinRequest) : TrueSealEvent()" not in txt:
+            die("fix 3 did not land in trueseal_sync.kt (JoinRequest not qualified)")
+        close_overrides = txt.count("override fun `close`()")
+        if close_overrides != 1:
+            die(
+                f"trueseal_sync.kt has {close_overrides} override `close`() after patching "
+                "(expected exactly 1 — TrueSeal's; a surviving base-class duplicate means fix 1 missed)"
+            )
+    if kind == "noise":
+        if "val `message`: kotlin.String" in txt:
+            die("fix 2 did not land in trueseal_noise.kt (`message` param still shadows)")
+        if "rawMessage" not in txt:
+            die("fix 2 did not land in trueseal_noise.kt (no rawMessage rename found)")
+        close_overrides = txt.count("override fun `close`()")
+        if close_overrides != 2:
+            die(
+                f"trueseal_noise.kt has {close_overrides} override `close`() after patching "
+                "(expected exactly 2 — SessionNk + SessionXx)"
+            )
+    # Both files: the shadowing param must be gone everywhere.
+    if "val `message`: kotlin.String" in txt:
+        die(f"{path} still declares the shadowing `message` param")
+
+
+NOISE = "lib/src/main/java/uniffi/trueseal_noise/trueseal_noise.kt"
+SYNC = "lib/src/main/java/uniffi/trueseal_sync/trueseal_sync.kt"
+
+patch(NOISE)
+patch(SYNC)
+assert_patched(NOISE, "noise")
+assert_patched(SYNC, "sync")
+print("patch_uniffi: all fixes applied and verified")

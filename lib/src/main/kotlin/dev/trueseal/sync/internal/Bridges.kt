@@ -45,20 +45,31 @@ internal class MessageHandlerBridge(
  * lock: they must RETURN PROMPTLY and must not call back into the
  * [dev.trueseal.sync.TrueSeal] object synchronously (see the prompt-return
  * rule on [dev.trueseal.sync.TrueSeal.onEvent]).
+ *
+ * A listener throw is contained here: Kotlin listeners (unlike Swift's
+ * non-throwing closures) can throw at runtime, and an exception escaping
+ * an FFI callback becomes a panic on the core thread via UniFFI — an app
+ * bug must not kill the session (ADR-0026's blast-radius rule). The
+ * exception is swallowed; delivery issues already carry the app's
+ * message-handler failures, and event listeners have no failure channel
+ * in ADR-0028.
  */
 internal class EventListenerBridge(
     private val listener: (TrueSealEvent) -> Unit,
 ) : TrueSealEventListener {
     override fun `onEvent`(event: FfiTrueSealEvent) {
-        listener(event.toPublic())
+        val mapped = event.toPublic()
+        runCatching { listener(mapped) }
     }
 }
 
-/** Delivery-issue listener bridge. Same prompt-return rule as events. */
+/** Delivery-issue listener bridge. Same prompt-return rule — and the same
+ *  throw containment — as events. */
 internal class IssueListenerBridge(
     private val listener: (DeliveryIssue) -> Unit,
 ) : TrueSealIssueListener {
     override fun `onDeliveryIssue`(issue: FfiDeliveryIssue) {
-        listener(issue.toPublic())
+        val mapped = issue.toPublic()
+        runCatching { listener(mapped) }
     }
 }

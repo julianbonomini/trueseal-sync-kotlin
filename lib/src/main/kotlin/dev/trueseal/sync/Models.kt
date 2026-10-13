@@ -36,13 +36,14 @@ data class Member(val id: String, val name: String)
 data class JoinRequest(val id: String, val name: String)
 
 /** The typed form of a Relay Address (ADR-0028). Parse the string form
- *  with [TrueSeal.parseRelayAddress]. */
+ *  with [TrueSeal.parseRelayAddress]. The ports default to the protocol
+ *  defaults 7700/7701 (signature parity with the Swift reference). */
 data class RelayAddress(
     val host: String,
     /** The relay's 32-byte X25519 public key. */
     val publicKey: ByteArray,
-    val receivePort: UShort,
-    val pushPort: UShort,
+    val receivePort: UShort = 7700u,
+    val pushPort: UShort = 7701u,
 ) {
     override fun equals(other: Any?): Boolean =
         other is RelayAddress &&
