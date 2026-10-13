@@ -31,13 +31,16 @@ class ApiSurfaceTest {
     fun `open, info, limits and parseRelayAddress live on the companion`() {
         val companion = trueSealClass.declaredClasses.first { it.simpleName == "Companion" }
         val methods = companion.declaredMethods.map { it.name }.toSet()
-        // `open` takes a `UInt?` parameter — Kotlin name-mangles functions
-        // with inline-class parameters (`open-<hash>`), so match the prefix.
-        assertTrue(
-            "companion must declare open; found: ${methods.sorted()}",
-            methods.any { it == "open" || it.startsWith("open-") },
-        )
-        for (expected in listOf("parseRelayAddress", "getInfo", "getMaxPayloadBytes", "getMaxGroupSize")) {
+        // Kotlin name-mangles members whose signatures involve inline
+        // classes (UInt): `open-<hash>`, `getMaxPayloadBytes-<hash>`, … —
+        // match by prefix. (Verified against the CI JUnit report.)
+        for (expected in listOf("open", "getMaxPayloadBytes", "getMaxGroupSize")) {
+            assertTrue(
+                "companion must declare $expected; found: ${methods.sorted()}",
+                methods.any { it == expected || it.startsWith("$expected-") },
+            )
+        }
+        for (expected in listOf("parseRelayAddress", "getInfo")) {
             assertTrue("companion must declare $expected; found: ${methods.sorted()}", methods.contains(expected))
         }
     }
