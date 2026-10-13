@@ -66,3 +66,8 @@ jobs:
           GRADLE_OPTS: ""
           JAVA_OPTS: ""
         run: ./gradlew :lib:testReleaseUnitTest
+
+      # TEMP (SDK-1 debug): surface full failure messages from the JUnit XML.
+      - name: Dump test failures
+        if: failure()
+        run: grep -rA6 "<failure" lib/build/test-results/testReleaseUnitTest/ | head -40
