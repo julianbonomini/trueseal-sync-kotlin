@@ -18,6 +18,14 @@ fix 1 must also match an override close() WITHOUT a @Throws annotation.)
    already declared in the same exception subclass body, causing a
    "Conflicting declarations" / "recursive problem" error.
    Fix: rename the constructor param to rawMessage and update the getter.
+
+3. (v0.6.0, SDK-1 #4) `TrueSealEvent.JoinRequest(val request: JoinRequest)` —
+   inside the sealed class body, the property type resolves to the NESTED
+   class itself, not the top-level `JoinRequest` record (Kotlin name
+   resolution). The converters (correctly) produce the top-level record, so
+   the file doesn't compile. Fix: qualify the property type as
+   `uniffi.trueseal_sync.JoinRequest`. (Codegen bug candidate for the core —
+   the Swift codegen is unaffected.)
 """
 import re
 from pathlib import Path
@@ -59,6 +67,12 @@ def patch(path: str) -> None:
         r'get\(\) = "message=\$\{ `message` \}"',
         'get() = "message=${ rawMessage }"',
         txt,
+    )
+
+    # ── Fix 3: qualify the self-shadowing JoinRequest property type ──────────
+    txt = txt.replace(
+        "data class JoinRequest(\n        val `request`: JoinRequest) : TrueSealEvent() {",
+        "data class JoinRequest(\n        val `request`: uniffi.trueseal_sync.JoinRequest) : TrueSealEvent() {",
     )
 
     p.write_text(txt)
