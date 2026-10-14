@@ -111,7 +111,15 @@ class TrueSeal private constructor(
                 }
             }
             is TrueSealEvent.MembersChanged -> synchronized(stateLock) {
-                _members.value = event.members
+                // The core's event payload carries the full manifest list,
+                // SELF INCLUDED, while core.members() excludes self
+                // (ADR-0028: members lists every OTHER member). Filter self
+                // so the event path and refreshState agree — the e2e
+                // Scenario Suite (trueseal-e2e#22) caught public members
+                // flipping to self-included here (the Kotlin twin of
+                // swift#19; me is stable across admission — it only changes
+                // with identity rotation, which also resets members).
+                _members.value = event.members.filter { it.id != _me.value.id }
             }
             is TrueSealEvent.ConnectionChanged -> synchronized(stateLock) {
                 _connection.value = event.connection
