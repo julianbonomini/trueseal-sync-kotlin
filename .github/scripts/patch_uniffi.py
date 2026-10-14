@@ -19,13 +19,15 @@ fix 1 must also match an override close() WITHOUT a @Throws annotation.)
    "Conflicting declarations" / "recursive problem" error.
    Fix: rename the constructor param to rawMessage and update the getter.
 
-3. (v0.6.0, SDK-1 #4) `TrueSealEvent.JoinRequest(val request: JoinRequest)` —
-   inside the sealed class body, the property type resolves to the NESTED
-   class itself, not the top-level `JoinRequest` record (Kotlin name
-   resolution). The converters (correctly) produce the top-level record, so
-   the file doesn't compile. Fix: qualify the property type as
-   `uniffi.trueseal_sync.JoinRequest`. (Codegen bug candidate for the core —
-   the Swift codegen is unaffected.)
+3. RETIRED (G0b) — v0.6.0 originally self-shadowed:
+   `TrueSealEvent.JoinRequest(val request: JoinRequest)` resolved the property
+   type to the NESTED class, not the top-level record, and the file did not
+   compile. Fixed CORE-SIDE in trueseal-sync PR #147 (commit e9f08fe): the
+   FFI record was renamed JoinRequest → MemberRequest (the canonical event
+   CASE name `joinRequest` is unchanged). From that pin on, the generated
+   Kotlin compiles unpatched; the qualified-type patch and its assertion are
+   removed (the string they required no longer exists — keeping the assert
+   would die on every fetch).
 """
 import re
 from pathlib import Path
@@ -69,12 +71,6 @@ def patch(path: str) -> None:
         txt,
     )
 
-    # ── Fix 3: qualify the self-shadowing JoinRequest property type ──────────
-    txt = txt.replace(
-        "data class JoinRequest(\n        val `request`: JoinRequest) : TrueSealEvent() {",
-        "data class JoinRequest(\n        val `request`: uniffi.trueseal_sync.JoinRequest) : TrueSealEvent() {",
-    )
-
     p.write_text(txt)
     print(f"patched: {path}")
 
@@ -96,7 +92,8 @@ def assert_patched(path: str, kind: str) -> None:
       - fix 2: BOTH halves — the shadowing constructor param AND the old
         getter body must be gone; the rawMessage rename must be present
         (noise bindings).
-      - fix 3: the JoinRequest property type must be qualified (sync).
+      (fix 3 is RETIRED — the core-side record rename in trueseal-sync#147
+      removed the self-shadowing the patch worked around.)
     """
     txt = Path(path).read_text()
 
@@ -117,8 +114,6 @@ def assert_patched(path: str, kind: str) -> None:
         die(f"fix 2 getter rename did not land in {path} (old getter body survives)")
 
     if kind == "sync":
-        if "val `request`: uniffi.trueseal_sync.JoinRequest) : TrueSealEvent()" not in txt:
-            die("fix 3 did not land in trueseal_sync.kt (JoinRequest not qualified)")
         close_overrides = txt.count("override fun `close`()")
         if close_overrides != 1:
             die(

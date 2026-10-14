@@ -39,9 +39,9 @@ REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 # never WHETHER the bytes are pinned. CI and local builds use the committed
 # defaults; check-pins.sh still rejects any floating reference.
 CORE_VERSION="${CORE_VERSION:-v0.6.0}"
-CORE_ZIP_SHA256="${CORE_ZIP_SHA256:-37faff4678f426162e908c06e3c05fec329b8f7c2320247c886d3b6f54aa115d}"
+CORE_ZIP_SHA256="${CORE_ZIP_SHA256:-b109757687b2a228904add829588e2b38473368aed18ecd7030440bf862261e6}"
 # The Linux x64 core library for the KOTLIN-2 JVM test lane (sync#114/B19).
-CORE_LINUX_ZIP_SHA256="${CORE_LINUX_ZIP_SHA256:-ca0b80e54a21f02651955b60697e6bf570bd9894899ca63686f92116469af851}"
+CORE_LINUX_ZIP_SHA256="${CORE_LINUX_ZIP_SHA256:-f559b494aeed4f023cac05a969923024a9b5905d3e36ab8b7dc902cdd0127770}"
 
 # ── Transport (see the header; flip the default once A6 lands) ────────────
 # Upstream: https://github.com/julianbonomini/trueseal-sync/releases/download/${CORE_VERSION}
