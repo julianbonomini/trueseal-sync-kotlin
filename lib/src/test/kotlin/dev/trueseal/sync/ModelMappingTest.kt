@@ -6,7 +6,7 @@ import uniffi.trueseal_sync.AdmissionDropReason as FfiAdmissionDropReason
 import uniffi.trueseal_sync.ConnectionState as FfiConnectionState
 import uniffi.trueseal_sync.DeliveryIssue as FfiDeliveryIssue
 import uniffi.trueseal_sync.GroupStatus as FfiGroupStatus
-import uniffi.trueseal_sync.JoinRequest as FfiJoinRequest
+import uniffi.trueseal_sync.MemberRequest as FfiMemberRequest
 import uniffi.trueseal_sync.Member as FfiMember
 import uniffi.trueseal_sync.RelayAddress as FfiRelayAddress
 import uniffi.trueseal_sync.SendFailedReason as FfiSendFailedReason
@@ -96,7 +96,7 @@ class ModelMappingTest {
         val cases: List<Pair<FfiTrueSealEvent, String>> = listOf(
             FfiTrueSealEvent.StatusChanged(FfiGroupStatus.MEMBER, FfiStatusReason.JOINED) to "statusChanged",
             FfiTrueSealEvent.MembersChanged(listOf(member)) to "membersChanged",
-            FfiTrueSealEvent.JoinRequest(FfiJoinRequest(id = "r1", name = "Joiner")) to "joinRequest",
+            FfiTrueSealEvent.JoinRequest(FfiMemberRequest(id = "r1", name = "Joiner")) to "joinRequest",
             FfiTrueSealEvent.ConnectionChanged(FfiConnectionState.Connected) to "connectionChanged",
             FfiTrueSealEvent.AdmissionDropped(name = "Joiner", reason = FfiAdmissionDropReason.GROUP_FULL) to "admissionDropped",
         )
@@ -118,7 +118,7 @@ class ModelMappingTest {
         assertEquals(listOf(Member(id = "m1", name = "One")), members.members)
 
         val join = FfiTrueSealEvent
-            .JoinRequest(FfiJoinRequest(id = "req-1", name = "New Phone"))
+            .JoinRequest(FfiMemberRequest(id = "req-1", name = "New Phone"))
             .toPublic() as TrueSealEvent.JoinRequestReceived
         assertEquals(JoinRequest(id = "req-1", name = "New Phone"), join.request)
     }

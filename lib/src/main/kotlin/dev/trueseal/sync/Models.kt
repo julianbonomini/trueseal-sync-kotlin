@@ -4,7 +4,7 @@ import uniffi.trueseal_sync.AdmissionDropReason as FfiAdmissionDropReason
 import uniffi.trueseal_sync.ConnectionState as FfiConnectionState
 import uniffi.trueseal_sync.DeliveryIssue as FfiDeliveryIssue
 import uniffi.trueseal_sync.GroupStatus as FfiGroupStatus
-import uniffi.trueseal_sync.JoinRequest as FfiJoinRequest
+import uniffi.trueseal_sync.MemberRequest as FfiMemberRequest
 import uniffi.trueseal_sync.Member as FfiMember
 import uniffi.trueseal_sync.RelayAddress as FfiRelayAddress
 import uniffi.trueseal_sync.SendFailedReason as FfiSendFailedReason
@@ -222,7 +222,7 @@ sealed class DeliveryIssue {
 
 internal fun FfiMember.toPublic() = Member(id = id, name = name)
 
-internal fun FfiJoinRequest.toPublic() = JoinRequest(id = id, name = name)
+internal fun FfiMemberRequest.toPublic() = JoinRequest(id = id, name = name)
 
 internal fun FfiTrueSealMessage.toPublic() =
     TrueSealMessage(id = id, from = from.toPublic(), body = body)
