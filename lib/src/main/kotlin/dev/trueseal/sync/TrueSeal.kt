@@ -84,32 +84,50 @@ class TrueSeal private constructor(
      */
     private val stateSubscription: Subscription = mapErrors {
         core.onEvent(
-            EventListenerBridge { event ->
-                when (event) {
-                    is TrueSealEvent.StatusChanged -> {
-                        synchronized(stateLock) {
-                            _status.value = event.status
-                            if (event.status != GroupStatus.Member) _members.value = emptyList()
-                        }
-                        CoroutineScope(Dispatchers.Default).launch {
-                            runCatching { mapErrors { core.me().toPublic() } }
-                                .onSuccess { refreshed ->
-                                    synchronized(stateLock) { _me.value = refreshed }
-                                }
-                        }
-                    }
-                    is TrueSealEvent.MembersChanged -> synchronized(stateLock) {
-                        _members.value = event.members
-                    }
-                    is TrueSealEvent.ConnectionChanged -> synchronized(stateLock) {
-                        _connection.value = event.connection
-                    }
-                    is TrueSealEvent.JoinRequestReceived,
-                    is TrueSealEvent.AdmissionDropped -> Unit
-                }
-            },
+            EventListenerBridge { event -> applyEvent(event) },
         )
     }.let(::Subscription)
+
+    /**
+     * Applies one core event to the state flows. Extracted from the
+     * listener so the JVM lane can drive synthetic events through the real
+     * dispatch path (the lane has no live relay — the end-to-end repro of
+     * the members self-inclusion bug lives in trueseal-e2e#22's suite and
+     * swift#19's live-relay test; here we pin the filtering property
+     * itself).
+     */
+    internal fun applyEvent(event: TrueSealEvent) {
+        when (event) {
+            is TrueSealEvent.StatusChanged -> {
+                synchronized(stateLock) {
+                    _status.value = event.status
+                    if (event.status != GroupStatus.Member) _members.value = emptyList()
+                }
+                CoroutineScope(Dispatchers.Default).launch {
+                    runCatching { mapErrors { core.me().toPublic() } }
+                        .onSuccess { refreshed ->
+                            synchronized(stateLock) { _me.value = refreshed }
+                        }
+                }
+            }
+            is TrueSealEvent.MembersChanged -> synchronized(stateLock) {
+                // The core's event payload carries the full manifest list,
+                // SELF INCLUDED, while core.members() excludes self
+                // (ADR-0028: members lists every OTHER member). Filter self
+                // so the event path and refreshState agree — the e2e
+                // Scenario Suite (trueseal-e2e#22) caught public members
+                // flipping to self-included here (the Kotlin twin of
+                // swift#19; me is stable across admission — it only changes
+                // with identity rotation, which also resets members).
+                _members.value = event.members.filter { it.id != _me.value.id }
+            }
+            is TrueSealEvent.ConnectionChanged -> synchronized(stateLock) {
+                _connection.value = event.connection
+            }
+            is TrueSealEvent.JoinRequestReceived,
+            is TrueSealEvent.AdmissionDropped -> Unit
+        }
+    }
 
     /**
      * Re-reads state from the core. Called after synchronous transitions

@@ -25,9 +25,14 @@ failure — e2e ADR-0001).
 
 ## What trueseal-e2e consumes (E2E-1)
 
-The Scenario Driver entry point is `dev.trueseal.sync.driver.Main`
-(`./gradlew :jvm-test:run` or a plain `java -cp` invocation with
-`-Djna.library.path=jvm-test/native`). E2E-1 starts it as a subprocess and
+The Scenario Driver entry point is `dev.trueseal.sync.driver.Main`. This
+module applies no `application` plugin (it is not a product), so there is
+no `:jvm-test:run` or `installDist`: the e2e harness compiles the classes
+and resolves the runtime classpath itself (an init-script task — see
+trueseal-e2e `scripts/kotlin-driver-classpath.init.gradle` and
+`lib/sdk-drivers.mjs`, which never modify this checkout), then spawns a
+plain `java -cp <resolved-classpath> -Djna.library.path=jvm-test/native
+dev.trueseal.sync.driver.Main`. E2E-1 starts it as a subprocess and
 speaks the JSON control protocol below over stdin/stdout.
 
 ## The JSON control protocol (v0 draft — E2E-1 owns its evolution)
